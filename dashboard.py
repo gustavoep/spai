@@ -575,7 +575,7 @@ if painel_selecionado == "Visão Geral":
     col_id_orig = df_filt.columns[0]
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
-    with col_m:
+with col_m:
         # Tratamento blindado para coordenadas no mapa
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
@@ -591,16 +591,21 @@ if painel_selecionado == "Visão Geral":
             if df_filt.shape[1] > 3: hover_dict[df_filt.columns[3]] = True; labels_dict[df_filt.columns[3]] = "Município"
             if df_filt.shape[1] > 4: hover_dict[df_filt.columns[4]] = True; labels_dict[df_filt.columns[4]] = "Tipo"
 
-            fig = px.scatter_mapbox(
+            # Utilizando scatter_map nativo (não requer token do Mapbox na nuvem)
+            fig = px.scatter_map(
                 df_m, lat="Lat", lon="Lon",
                 hover_name=col_nome_orig,
                 hover_data=hover_dict,
                 labels=labels_dict,
                 zoom=6.1, center={"lat": -22.3, "lon": -48.8},
-                mapbox_style="carto-positron", height=480
+                height=480
+            )
+            # Estilo moderno e neutro open-source (carto-positron)
+            fig.update_layout(
+                map_style="carto-positron",
+                margin={"r":0, "t":0, "l":0, "b":0}
             )
             fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
-            fig.update_layout(margin={"r":0, "t":0, "l":0, "b":0})
             st.plotly_chart(fig, width='stretch')
         else:
             st.warning("⚠️ Não há coordenadas geográficas válidas para exibir no mapa com os filtros selecionados.")
