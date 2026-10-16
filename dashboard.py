@@ -167,6 +167,43 @@ st.markdown("""
     .metric-val { font-size: 24px; font-weight: bold; color: #005f73; }
     .metric-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
 
+    /* Card Especial de Destaque */
+    .destaque-box {
+        background: linear-gradient(135deg, #005f73 0%, #0a9396 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 10px 12px;
+        text-align: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .destaque-val {
+        font-size: 16px;
+        font-weight: 800;
+        color: #ffffff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1.2;
+    }
+    .destaque-sub {
+        font-size: 11px;
+        color: #e0f2fe;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+    .destaque-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94d2bd;
+        margin-top: 4px;
+        letter-spacing: 0.5px;
+    }
+
     .concept-card {
         background-color: #f8fafc;
         border-left: 4px solid #005f73;
@@ -367,11 +404,34 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
 
-        k1, k2, k3, k4 = st.columns(4)
+        # Cálculo dinâmico da Vertical/Segmento de maior destaque para o filtro
+        df_top_item = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
+        df_top_item.columns = ["Item", "Qtd"]
+        df_top_item = df_top_item.sort_values(by="Qtd", ascending=False)
+
+        if not df_top_item.empty and total_amb > 0:
+            top_nome_item = df_top_item.iloc[0]["Item"]
+            top_qtd_item = int(df_top_item.iloc[0]["Qtd"])
+            pct_item = round((top_qtd_item / max(total_amb, 1)) * 100)
+            destaque_texto = f"{top_nome_item}"
+            destaque_sub = f"{top_qtd_item} ambiente(s) ({pct_item}%)"
+        else:
+            destaque_texto = "Nenhum"
+            destaque_sub = "0 ambientes"
+
+        # Cards de Métricas do Filtro + Card Destaque
+        k1, k2, k3, k4, k5 = st.columns([1, 1, 1, 1, 1.3])
         k1.markdown(f'<div class="metric-card"><div class="metric-val">{total_amb}</div><div class="metric-lbl">Ambientes Mapeados</div></div>', unsafe_allow_html=True)
         k2.markdown(f'<div class="metric-card"><div class="metric-val">{total_items}</div><div class="metric-lbl">{item_plural}</div></div>', unsafe_allow_html=True)
         k3.markdown(f'<div class="metric-card"><div class="metric-val">{total_muns}</div><div class="metric-lbl">Municípios Atendidos</div></div>', unsafe_allow_html=True)
-        k4.markdown(f'<div class="metric-card"><div class="metric-val">{media_items}</div><div class="metric-lbl">Média de {item_plural} / Ambiente</div></div>', unsafe_allow_html=True)
+        k4.markdown(f'<div class="metric-card"><div class="metric-val">{media_items}</div><div class="metric-lbl">Média / Ambiente</div></div>', unsafe_allow_html=True)
+        k5.markdown(f'''
+            <div class="destaque-box">
+                <div class="destaque-val" title="{destaque_texto}">{destaque_texto}</div>
+                <div class="destaque-sub">{destaque_sub}</div>
+                <div class="destaque-lbl">🏆 Maior Destaque do Filtro</div>
+            </div>
+        ''', unsafe_allow_html=True)
 
         st.markdown("---")
 
