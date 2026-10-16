@@ -3,13 +3,16 @@ import pandas as pd
 import plotly.express as px
 import os
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Caminhos exatos no GitHub / Repositório
 CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
 CAMINHO_CTI = "assets/CTI.png"
+
+# Fuso horário oficial de Brasília (UTC-3)
+FUSO_BRASILIA = timezone(timedelta(hours=-3))
 
 # Função para normalizar strings (remove acentos, maiúsculas e espaços extras)
 def normalizar_texto(txt):
@@ -653,4 +656,4 @@ elif painel_selecionado == "Segmentos de Mercado":
 st.markdown("---")
 f1, f2 = st.columns([1, 1])
 f1.caption("Fontes: Mapeamento do Sistema Paulista de Ambientes de Inovação (SPAI).")
-f2.caption(f"Última verificação: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+f2.caption(f"Última verificação: {datetime.now(FUSO_BRASILIA).strftime('%d/%m/%Y %H:%M')}")
