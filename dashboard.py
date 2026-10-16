@@ -371,7 +371,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         st.markdown("---")
 
         # ----------------------------------------------------
-        # LINHA SUPERIOR DE CARDS KPI + TOP 3 DADOS
+        # LINHA SUPERIOR DE CARDS KPI
         # ----------------------------------------------------
         total_amb = df_filt_f[col_nome].nunique()
         total_items = df_filt_f[col_atuacao].nunique()
@@ -380,51 +380,17 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
 
-        # Cálculo dinâmico do TOP 3 para o filtro ativo
-        df_top_items = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
-        df_top_items.columns = ["Item", "Qtd"]
-        df_top_items = df_top_items.sort_values(by="Qtd", ascending=False).head(3)
-
-        linhas_top3_html = ""
-        if not df_top_items.empty and total_amb > 0:
-            for idx, row_t in enumerate(df_top_items.itertuples(), 1):
-                item_nome_t = row_t.Item
-                qtd_t = int(row_t.Qtd)
-                pct_t = round((qtd_t / max(total_amb, 1)) * 100)
-                linhas_top3_html += f'''
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 6px;">
-                    <span style="font-weight: 700; color: #ffffff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="{item_nome_t}">
-                        {idx}º {item_nome_t}
-                    </span>
-                    <span style="background-color: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #e0f2fe; font-size: 10px; flex-shrink: 0; white-space: nowrap;">
-                        {qtd_t} amb ({pct_t}%)
-                    </span>
-                </div>
-                '''
-        else:
-            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
-
-        card_top3_html = f'''
-        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
-                🏆 Top 3 {item_plural}
-            </div>
-            {linhas_top3_html}
-        </div>
-        '''
-
         # Layout da linha superior dos Cards de KPI
-        k1, k2, k3, k4, k5 = st.columns([1, 1, 1, 1, 1.4])
+        k1, k2, k3, k4 = st.columns(4)
         k1.markdown(f'<div class="metric-card"><div class="metric-val">{total_amb}</div><div class="metric-lbl">Ambientes Mapeados</div></div>', unsafe_allow_html=True)
         k2.markdown(f'<div class="metric-card"><div class="metric-val">{total_items}</div><div class="metric-lbl">{item_plural}</div></div>', unsafe_allow_html=True)
         k3.markdown(f'<div class="metric-card"><div class="metric-val">{total_muns}</div><div class="metric-lbl">Municípios Atendidos</div></div>', unsafe_allow_html=True)
         k4.markdown(f'<div class="metric-card"><div class="metric-val">{media_items}</div><div class="metric-lbl">Média / Ambiente</div></div>', unsafe_allow_html=True)
-        k5.markdown(card_top3_html, unsafe_allow_html=True)
 
         st.markdown("---")
 
         # ----------------------------------------------------
-        # TABELA DETALHADA E GRÁFICO
+        # TABELA DETALHADA E TREEMAP
         # ----------------------------------------------------
         st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
 
@@ -463,60 +429,41 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
         st.markdown("---")
 
-        # Gráfico de Barras Moderno e Neutro
+        # Treemap para Distribuição dos Ambientes
         st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
-        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=True)
+        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
 
         if not df_dist.empty:
             escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
 
-            fig_bar = px.bar(
+            fig_tree = px.treemap(
                 df_dist,
-                x="Quantidade de Ambientes",
-                y=titulo_item,
-                orientation="h",
-                text="Quantidade de Ambientes",
+                path=[titulo_item],
+                values="Quantidade de Ambientes",
                 color="Quantidade de Ambientes",
                 color_continuous_scale=escala_neutra
             )
 
-            fig_bar.update_traces(
-                textposition="outside",
-                textfont=dict(size=12, color="#0f172a", family="Inter, sans-serif"),
-                marker=dict(
-                    line=dict(color='rgba(255, 255, 255, 0.9)', width=1.2),
-                    cornerradius=4
-                ),
-                hovertemplate="<b>%{y}</b><br>Ambientes Atendidos: <b>%{x}</b><extra></extra>"
+            fig_tree.update_traces(
+                textinfo="label+value",
+                textfont=dict(size=13, family="Inter, sans-serif"),
+                hovertemplate="<b>%{label}</b><br>Ambientes Atendidos: <b>%{value}</b><extra></extra>",
+                marker=dict(cornerradius=4)
             )
 
-            max_val = df_dist["Quantidade de Ambientes"].max()
-            fig_bar.update_layout(
-                yaxis={
-                    "categoryorder": "total ascending",
-                    "tickfont": dict(size=12, color="#334155", family="Inter, sans-serif")
-                },
-                xaxis={
-                    "range": [0, max_val * 1.12],
-                    "tickfont": dict(size=11, color="#64748b"),
-                    "showgrid": True,
-                    "gridcolor": "rgba(226, 232, 240, 0.7)",
-                    "zeroline": False
-                },
-                xaxis_title="<b>Quantidade de Ambientes</b>",
-                yaxis_title=f"<b>{titulo_item}</b>",
+            fig_tree.update_layout(
                 coloraxis_showscale=False,
-                height=max(400, len(df_dist) * 30),
-                margin={"l": 10, "r": 35, "t": 20, "b": 20},
+                height=480,
+                margin={"l": 10, "r": 10, "t": 20, "b": 20},
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Inter, sans-serif", color="#334155")
             )
 
-            st.plotly_chart(fig_bar, width='stretch')
+            st.plotly_chart(fig_tree, width='stretch')
 
 
 # ====================================================
