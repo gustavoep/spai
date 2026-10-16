@@ -390,7 +390,47 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         st.markdown("---")
 
         # ----------------------------------------------------
-        # TABELA DETALHADA E TREEMAP
+        # 1º: TREEMAP (DISTRIBUIÇÃO DOS AMBIENTES)
+        # ----------------------------------------------------
+        st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
+
+        df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
+        df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
+        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
+
+        if not df_dist.empty:
+            escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
+
+            fig_tree = px.treemap(
+                df_dist,
+                path=[titulo_item],
+                values="Quantidade de Ambientes",
+                color="Quantidade de Ambientes",
+                color_continuous_scale=escala_neutra
+            )
+
+            fig_tree.update_traces(
+                textinfo="label+value",
+                textfont=dict(size=13, family="Inter, sans-serif"),
+                hovertemplate="<b>%{label}</b><br>Ambientes Atendidos: <b>%{value}</b><extra></extra>",
+                marker=dict(cornerradius=4)
+            )
+
+            fig_tree.update_layout(
+                coloraxis_showscale=False,
+                height=480,
+                margin={"l": 10, "r": 10, "t": 20, "b": 20},
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Inter, sans-serif", color="#334155")
+            )
+
+            st.plotly_chart(fig_tree, width='stretch')
+
+        st.markdown("---")
+
+        # ----------------------------------------------------
+        # 2º: TABELA DETALHADA (RELAÇÃO COMPLETA DE AMBIENTES)
         # ----------------------------------------------------
         st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
 
@@ -426,44 +466,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             width='stretch',
             height=380
         )
-
-        st.markdown("---")
-
-        # Treemap para Distribuição dos Ambientes
-        st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
-
-        df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
-        df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
-        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
-
-        if not df_dist.empty:
-            escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
-
-            fig_tree = px.treemap(
-                df_dist,
-                path=[titulo_item],
-                values="Quantidade de Ambientes",
-                color="Quantidade de Ambientes",
-                color_continuous_scale=escala_neutra
-            )
-
-            fig_tree.update_traces(
-                textinfo="label+value",
-                textfont=dict(size=13, family="Inter, sans-serif"),
-                hovertemplate="<b>%{label}</b><br>Ambientes Atendidos: <b>%{value}</b><extra></extra>",
-                marker=dict(cornerradius=4)
-            )
-
-            fig_tree.update_layout(
-                coloraxis_showscale=False,
-                height=480,
-                margin={"l": 10, "r": 10, "t": 20, "b": 20},
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Inter, sans-serif", color="#334155")
-            )
-
-            st.plotly_chart(fig_tree, width='stretch')
 
 
 # ====================================================
