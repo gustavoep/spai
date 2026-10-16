@@ -5,4 +5,7 @@ O SPAI é um programa da política pública de inovação do Estado de São Paul
 
 📌 Objetivo: Incentivar investimentos em inovação, fortalecer a pesquisa científica e conectar parques tecnológicos, incubadoras, centros de inovação, hubs e aceleradoras ao setor produtivo.
 
+## Demo
+🔗 **Acesse o dashboard:** <https://spaisp.streamlit.app>
+
 🔗 Saiba mais no site oficial da SCTI: <https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai>
