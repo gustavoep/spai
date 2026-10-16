@@ -9,6 +9,7 @@ from datetime import datetime, timezone, timedelta
 CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
+CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 CAMINHO_CTI = "assets/CTI.png"
 
 # Fuso horário oficial de Brasília (UTC-3)
@@ -39,26 +40,10 @@ def ordenar_categorias_prioritarias(lista_cats):
         return 999
     return sorted(lista_cats, key=lambda c: (prioridade_chave(c), c))
 
-# Função para localizar arquivos com redundância de caminhos
-def obter_caminho_existente(caminho_principal, nome_arquivo):
-    caminhos = [
-        caminho_principal,
-        f"assets/{nome_arquivo}",
-        f"data/{nome_arquivo}",
-        os.path.join(os.getcwd(), nome_arquivo)
-    ]
-    for c in caminhos:
-        if os.path.exists(c):
-            return c
-    return caminho_principal
-
-# Localização do ícone CTI.png para a aba do navegador
-FAVICON_CTI = obter_caminho_existente(CAMINHO_CTI, "CTI.png")
-
 # Configuração da Página (Primeiro comando Streamlit)
 st.set_page_config(
     page_title="SPAI - Ambientes de Inovação SP",
-    page_icon=FAVICON_CTI if os.path.exists(FAVICON_CTI) else "🏛️",
+    page_icon=CAMINHO_CTI if os.path.exists(CAMINHO_CTI) else "🏛️",
     layout="wide"
 )
 
@@ -206,25 +191,18 @@ def carregar_base_geral():
     df["Lon"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[1])
     return df
 
-# Função para carregar arquivo Excel do repositório ou upload
-def carregar_excel_fato(caminho_preferencial, nome_arquivo_fallback):
-    caminhos_tentativas = [
-        caminho_preferencial,
-        f"data/{nome_arquivo_fallback}",
-        os.path.join(os.getcwd(), nome_arquivo_fallback),
-        f"/content/{nome_arquivo_fallback}"
-    ]
-    for c in caminhos_tentativas:
-        if os.path.exists(c):
-            try:
-                return pd.read_excel(c)
-            except Exception:
-                pass
+# Função para carregar arquivo Excel do caminho exato
+def carregar_excel_fato(caminho_exato):
+    if os.path.exists(caminho_exato):
+        try:
+            return pd.read_excel(caminho_exato)
+        except Exception:
+            pass
     return None
 
 df_spai = carregar_base_geral()
-df_segmentos = carregar_excel_fato(CAMINHO_SEGMENTOS, "Fato_Segmentos.xlsx")
-df_verticais = carregar_excel_fato(CAMINHO_VERTICAIS, "Fato_Verticais.xlsx")
+df_segmentos = carregar_excel_fato(CAMINHO_SEGMENTOS)
+df_verticais = carregar_excel_fato(CAMINHO_VERTICAIS)
 
 # Mapeamento mestre de dados do SPAI pelo Nome do Ambiente
 col_spai_id = df_spai.columns[0]
@@ -249,9 +227,8 @@ for _, r in df_spai.iterrows():
 # ----------------------------------------------------
 # BARRA LATERAL - NAVEGAÇÃO ENTRE PAINÉIS
 # ----------------------------------------------------
-logo_sidebar = obter_caminho_existente(CAMINHO_LOGO_HORIZONTAL, "Logotipo Horizontal SPAI.png")
-if os.path.exists(logo_sidebar):
-    st.sidebar.image(logo_sidebar, width='stretch')
+if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
+    st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
 
 painel_selecionado = st.sidebar.radio(
     "Navegação por Painel:",
@@ -271,6 +248,10 @@ Incentivar investimentos em inovação, fortalecer a pesquisa científica e cone
 🔗 [Saiba mais no site oficial da SCTI](https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai)
 """)
 
+# Logo do Projeto Japi exibido logo abaixo da caixa informativa
+if os.path.exists(CAMINHO_LOGO_JAPI):
+    st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
+
 # Função genérica de renderização de painel fato
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
@@ -289,7 +270,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
     st.markdown("---")
 
     if df_fato is None or df_fato.empty:
-        st.warning(f"⚠️ A planilha de {item_plural} não foi localizada automaticamente na pasta data/ do repositório.")
+        st.warning(f"⚠️ A planilha de {item_plural} não foi localizada no caminho especificado.")
         uploaded_file = st.file_uploader(f"Enviar arquivo de {item_plural}", type=["xlsx", "xls"], key=f"up_{titulo_item}")
         if uploaded_file is not None:
             try:
