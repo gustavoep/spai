@@ -345,28 +345,28 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if cat_sel and cat_sel != "Todas":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Categoria"] == cat_sel]
 
-        # Dropdowns Secundários (Região, Município, Tipo, Item)
+        # Dropdowns Secundários (Vertical/Segmento em Primeiro Lugar, depois Região, Município, Tipo)
         f_cols = st.columns(4)
 
+        atuacao_list = ["Todos"] + sorted([a for a in df_filt_f[col_atuacao].dropna().astype(str).str.strip().unique() if a != ""])
+        item_sel = f_cols[0].selectbox(f"{titulo_item}:", atuacao_list, key=f"item_{titulo_item}")
+        if item_sel != "Todos":
+            df_filt_f = df_filt_f[df_filt_f[col_atuacao].astype(str).str.strip() == item_sel]
+
         reg_list = ["Todas"] + sorted([r for r in df_filt_f["SPAI_Regiao"].unique() if r != ""])
-        reg_sel = f_cols[0].selectbox("Região Administrativa:", reg_list, key=f"reg_{titulo_item}")
+        reg_sel = f_cols[1].selectbox("Região Administrativa:", reg_list, key=f"reg_{titulo_item}")
         if reg_sel != "Todas":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Regiao"] == reg_sel]
 
         mun_list = ["Todos"] + sorted([m for m in df_filt_f["SPAI_Municipio"].unique() if m != ""])
-        mun_sel = f_cols[1].selectbox("Município:", mun_list, key=f"mun_{titulo_item}")
+        mun_sel = f_cols[2].selectbox("Município:", mun_list, key=f"mun_{titulo_item}")
         if mun_sel != "Todos":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Municipio"] == mun_sel]
 
         tipo_list = ["Todos"] + sorted([t for t in df_filt_f["SPAI_Tipo"].unique() if t != ""])
-        tipo_sel = f_cols[2].selectbox("Tipo (Pleno / Associado):", tipo_list, key=f"tipo_{titulo_item}")
+        tipo_sel = f_cols[3].selectbox("Tipo (Pleno / Associado):", tipo_list, key=f"tipo_{titulo_item}")
         if tipo_sel != "Todos":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Tipo"] == tipo_sel]
-
-        atuacao_list = ["Todos"] + sorted([a for a in df_filt_f[col_atuacao].dropna().astype(str).str.strip().unique() if a != ""])
-        item_sel = f_cols[3].selectbox(f"{titulo_item}:", atuacao_list, key=f"item_{titulo_item}")
-        if item_sel != "Todos":
-            df_filt_f = df_filt_f[df_filt_f[col_atuacao].astype(str).str.strip() == item_sel]
 
         st.markdown("---")
 
