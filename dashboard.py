@@ -509,7 +509,6 @@ if painel_selecionado == "Visão Geral":
             <div class="kpi-lbl-membros">Total de Membros SPAI</div>
         </div>
     ''', unsafe_allow_html=True)
-    
     top2.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{plenos}</div><div class="kpi-lbl-top">Membros Plenos</div></div>', unsafe_allow_html=True)
     top3.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{associados}</div><div class="kpi-lbl-top">Membros Associados</div></div>', unsafe_allow_html=True)
     top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
@@ -575,7 +574,7 @@ if painel_selecionado == "Visão Geral":
     col_id_orig = df_filt.columns[0]
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
-with col_m:
+    with col_m:
         # Tratamento blindado para coordenadas no mapa
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
@@ -591,7 +590,6 @@ with col_m:
             if df_filt.shape[1] > 3: hover_dict[df_filt.columns[3]] = True; labels_dict[df_filt.columns[3]] = "Município"
             if df_filt.shape[1] > 4: hover_dict[df_filt.columns[4]] = True; labels_dict[df_filt.columns[4]] = "Tipo"
 
-            # Utilizando scatter_map nativo (não requer token do Mapbox na nuvem)
             fig = px.scatter_map(
                 df_m, lat="Lat", lon="Lon",
                 hover_name=col_nome_orig,
@@ -600,7 +598,6 @@ with col_m:
                 zoom=6.1, center={"lat": -22.3, "lon": -48.8},
                 height=480
             )
-            # Estilo moderno e neutro open-source (carto-positron)
             fig.update_layout(
                 map_style="carto-positron",
                 margin={"r":0, "t":0, "l":0, "b":0}
