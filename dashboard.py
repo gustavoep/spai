@@ -163,46 +163,13 @@ st.markdown("""
         padding: 12px;
         text-align: center;
         box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .metric-val { font-size: 24px; font-weight: bold; color: #005f73; }
-    .metric-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
-
-    /* Card Especial de Destaque */
-    .destaque-box {
-        background: linear-gradient(135deg, #005f73 0%, #0a9396 100%);
-        color: white;
-        border-radius: 8px;
-        padding: 10px 12px;
-        text-align: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    .destaque-val {
-        font-size: 16px;
-        font-weight: 800;
-        color: #ffffff;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.2;
-    }
-    .destaque-sub {
-        font-size: 11px;
-        color: #e0f2fe;
-        font-weight: 600;
-        margin-top: 2px;
-    }
-    .destaque-lbl {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: #94d2bd;
-        margin-top: 4px;
-        letter-spacing: 0.5px;
-    }
+    .metric-val { font-size: 24px; font-weight: bold; color: #005f73; }
+    .metric-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
 
     .concept-card {
         background-color: #f8fafc;
@@ -318,7 +285,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
     st.markdown("---")
 
-    # Caso não seja localizado, permite upload direto
     if df_fato is None or df_fato.empty:
         st.warning(f"⚠️ A planilha de {item_plural} não foi localizada automaticamente na pasta data/ do repositório.")
         uploaded_file = st.file_uploader(f"Enviar arquivo de {item_plural}", type=["xlsx", "xls"], key=f"up_{titulo_item}")
@@ -344,7 +310,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         col_atuacao = encontrar_coluna(["vertical", "segmento", "área", "area", "atuação", "atuacao"]) or cols[-1]
 
         # Enriquecimento com os dados cruzados da Base Geral SPAI
-        df_filt_f = df_fato.copy()
+        df_base = df_fato.copy()
 
         def extrair_dado_spai(row, propriedade):
             key = normalizar_texto(row[col_nome])
@@ -352,28 +318,34 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 return MAPA_SPAI_DADOS[key][propriedade]
             return ""
 
-        df_filt_f["SPAI_ID"] = df_filt_f.apply(lambda r: extrair_dado_spai(r, "ID"), axis=1)
-        df_filt_f["SPAI_Categoria"] = df_filt_f.apply(lambda r: extrair_dado_spai(r, "Categoria"), axis=1)
-        df_filt_f["SPAI_Regiao"] = df_filt_f.apply(lambda r: extrair_dado_spai(r, "Regiao"), axis=1)
-        df_filt_f["SPAI_Municipio"] = df_filt_f.apply(lambda r: extrair_dado_spai(r, "Municipio"), axis=1)
-        df_filt_f["SPAI_Tipo"] = df_filt_f.apply(lambda r: extrair_dado_spai(r, "Tipo"), axis=1)
+        df_base["SPAI_ID"] = df_base.apply(lambda r: extrair_dado_spai(r, "ID"), axis=1)
+        df_base["SPAI_Categoria"] = df_base.apply(lambda r: extrair_dado_spai(r, "Categoria"), axis=1)
+        df_base["SPAI_Regiao"] = df_base.apply(lambda r: extrair_dado_spai(r, "Regiao"), axis=1)
+        df_base["SPAI_Municipio"] = df_base.apply(lambda r: extrair_dado_spai(r, "Municipio"), axis=1)
+        df_base["SPAI_Tipo"] = df_base.apply(lambda r: extrair_dado_spai(r, "Tipo"), axis=1)
 
-        st.subheader(f"🔍 Filtros de {item_plural}")
+        # ----------------------------------------------------
+        # FILTROS CENTRALIZADOS NA PÁGINA
+        # ----------------------------------------------------
+        st.markdown("<h4 style='text-align: center; color: #005f73; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
 
-        # Filtro 1: Categoria do Ambiente com priorização
-        cats_unicas = [c for c in df_filt_f["SPAI_Categoria"].unique() if c != ""]
+        cats_unicas = [c for c in df_base["SPAI_Categoria"].unique() if c != ""]
         cats_ordenadas = ordenar_categorias_prioritarias(cats_unicas)
         cats_opts = ["Todas"] + cats_ordenadas
-        st.markdown("**Categoria do ambiente:**")
-        if hasattr(st, "pills"):
-            cat_sel = st.pills(f"cat_{titulo_item}", cats_opts, default="Todas", label_visibility="collapsed")
-        else:
-            cat_sel = st.selectbox(f"Categoria ({titulo_item}):", cats_opts)
 
+        col_f1, col_f2, col_f3 = st.columns([1, 8, 1])
+        with col_f2:
+            st.markdown("<div style='text-align: center; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;'>Categoria do Ambiente:</div>", unsafe_allow_html=True)
+            if hasattr(st, "pills"):
+                cat_sel = st.pills(f"cat_{titulo_item}", cats_opts, default="Todas", label_visibility="collapsed")
+            else:
+                cat_sel = st.selectbox(f"Categoria ({titulo_item}):", cats_opts, label_visibility="collapsed")
+
+        df_filt_f = df_base.copy()
         if cat_sel and cat_sel != "Todas":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Categoria"] == cat_sel]
 
-        # Filtros secundários: Região Administrativa, Município, Tipo e Item (Vertical/Segmento)
+        # Dropdowns Secundários (Região, Município, Tipo, Item)
         f_cols = st.columns(4)
 
         reg_list = ["Todas"] + sorted([r for r in df_filt_f["SPAI_Regiao"].unique() if r != ""])
@@ -396,7 +368,11 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if item_sel != "Todos":
             df_filt_f = df_filt_f[df_filt_f[col_atuacao].astype(str).str.strip() == item_sel]
 
-        st.write("")
+        st.markdown("---")
+
+        # ----------------------------------------------------
+        # LINHA SUPERIOR DE CARDS KPI + TOP 3 DADOS
+        # ----------------------------------------------------
         total_amb = df_filt_f[col_nome].nunique()
         total_items = df_filt_f[col_atuacao].nunique()
         total_muns = df_filt_f["SPAI_Municipio"].replace("", None).dropna().nunique()
@@ -404,38 +380,52 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
 
-        # Cálculo dinâmico da Vertical/Segmento de maior destaque para o filtro
-        df_top_item = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
-        df_top_item.columns = ["Item", "Qtd"]
-        df_top_item = df_top_item.sort_values(by="Qtd", ascending=False)
+        # Cálculo dinâmico do TOP 3 para o filtro ativo
+        df_top_items = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
+        df_top_items.columns = ["Item", "Qtd"]
+        df_top_items = df_top_items.sort_values(by="Qtd", ascending=False).head(3)
 
-        if not df_top_item.empty and total_amb > 0:
-            top_nome_item = df_top_item.iloc[0]["Item"]
-            top_qtd_item = int(df_top_item.iloc[0]["Qtd"])
-            pct_item = round((top_qtd_item / max(total_amb, 1)) * 100)
-            destaque_texto = f"{top_nome_item}"
-            destaque_sub = f"{top_qtd_item} ambiente(s) ({pct_item}%)"
+        linhas_top3_html = ""
+        if not df_top_items.empty and total_amb > 0:
+            for idx, row_t in enumerate(df_top_items.itertuples(), 1):
+                item_nome_t = row_t.Item
+                qtd_t = int(row_t.Qtd)
+                pct_t = round((qtd_t / max(total_amb, 1)) * 100)
+                linhas_top3_html += f'''
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 11px;">
+                    <span style="font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;" title="{item_nome_t}">
+                        {idx}º {item_nome_t}
+                    </span>
+                    <span style="background-color: rgba(255,255,255,0.2); padding: 1px 5px; border-radius: 4px; font-weight: 600; color: #e0f2fe; font-size: 10px;">
+                        {qtd_t} amb ({pct_t}%)
+                    </span>
+                </div>
+                '''
         else:
-            destaque_texto = "Nenhum"
-            destaque_sub = "0 ambientes"
+            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
 
-        # Cards de Métricas do Filtro + Card Destaque
-        k1, k2, k3, k4, k5 = st.columns([1, 1, 1, 1, 1.3])
+        card_top3_html = f'''
+        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 4px; text-align: center;">
+                🏆 Top 3 {item_plural}
+            </div>
+            {linhas_top3_html}
+        </div>
+        '''
+
+        # Layout da linha superior dos Cards de KPI
+        k1, k2, k3, k4, k5 = st.columns([1, 1, 1, 1, 1.4])
         k1.markdown(f'<div class="metric-card"><div class="metric-val">{total_amb}</div><div class="metric-lbl">Ambientes Mapeados</div></div>', unsafe_allow_html=True)
         k2.markdown(f'<div class="metric-card"><div class="metric-val">{total_items}</div><div class="metric-lbl">{item_plural}</div></div>', unsafe_allow_html=True)
         k3.markdown(f'<div class="metric-card"><div class="metric-val">{total_muns}</div><div class="metric-lbl">Municípios Atendidos</div></div>', unsafe_allow_html=True)
         k4.markdown(f'<div class="metric-card"><div class="metric-val">{media_items}</div><div class="metric-lbl">Média / Ambiente</div></div>', unsafe_allow_html=True)
-        k5.markdown(f'''
-            <div class="destaque-box">
-                <div class="destaque-val" title="{destaque_texto}">{destaque_texto}</div>
-                <div class="destaque-sub">{destaque_sub}</div>
-                <div class="destaque-lbl">🏆 Maior Destaque do Filtro</div>
-            </div>
-        ''', unsafe_allow_html=True)
+        k5.markdown(card_top3_html, unsafe_allow_html=True)
 
         st.markdown("---")
 
-        # Tabela Detalhada por Ambiente
+        # ----------------------------------------------------
+        # TABELA DETALHADA E GRÁFICO
+        # ----------------------------------------------------
         st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
 
         df_grouped = df_filt_f.groupby(["SPAI_ID", col_nome], dropna=False).agg(
