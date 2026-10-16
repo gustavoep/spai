@@ -380,7 +380,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
 
-        # Cálculo dinâmico do TOP 3 para o filtro ativo
+# Cálculo dinâmico do TOP 3 para o filtro ativo
         df_top_items = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_top_items.columns = ["Item", "Qtd"]
         df_top_items = df_top_items.sort_values(by="Qtd", ascending=False).head(3)
@@ -392,15 +392,37 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 qtd_t = int(row_t.Qtd)
                 pct_t = round((qtd_t / max(total_amb, 1)) * 100)
                 linhas_top3_html += f'''
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 11px;">
-                    <span style="font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 65%;" title="{item_nome_t}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 6px;">
+                    <span style="font-weight: 700; color: #ffffff; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;" title="{item_nome_t}">
                         {idx}º {item_nome_t}
                     </span>
-                    <span style="background-color: rgba(255,255,255,0.2); padding: 1px 5px; border-radius: 4px; font-weight: 600; color: #e0f2fe; font-size: 10px;">
+                    <span style="background-color: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; color: #e0f2fe; font-size: 10px; flex-shrink: 0; white-space: nowrap;">
                         {qtd_t} amb ({pct_t}%)
                     </span>
                 </div>
                 '''
+        else:
+            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
+
+        card_top3_html = f'''
+        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
+                🏆 Top 3 {item_plural}
+            </div>
+            {linhas_top3_html}
+        </div>
+        '''
+        else:
+            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
+
+        card_top3_html = f'''
+        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
+                🏆 Top 3 {item_plural}
+            </div>
+            {linhas_top3_html}
+        </div>
+        '''
         else:
             linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
 
