@@ -1,3 +1,4 @@
+%%writefile app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -5,7 +6,7 @@ import os
 import unicodedata
 from datetime import datetime
 
-# Caminhos exatos no Google Drive
+# Caminhos exatos no GitHub / Repositório
 CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
@@ -16,7 +17,7 @@ def normalizar_texto(txt):
     if not isinstance(txt, str):
         txt = str(txt) if pd.notna(txt) else ""
     txt = txt.strip().lower()
-    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-utf-8' if False else 'utf-8')
+    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras e Centros de Inovação
@@ -40,8 +41,8 @@ def ordenar_categorias_prioritarias(lista_cats):
 def obter_caminho_existente(caminho_principal, nome_arquivo):
     caminhos = [
         caminho_principal,
-        f"/content/drive/MyDrive/{nome_arquivo}",
-        f"/content/{nome_arquivo}",
+        f"assets/{nome_arquivo}",
+        f"data/{nome_arquivo}",
         os.path.join(os.getcwd(), nome_arquivo)
     ]
     for c in caminhos:
@@ -199,13 +200,13 @@ def carregar_base_geral():
     df["Lon"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[1])
     return df
 
-# Função para carregar arquivo Excel local ou do Drive
+# Função para carregar arquivo Excel do repositório ou upload
 def carregar_excel_fato(caminho_preferencial, nome_arquivo_fallback):
     caminhos_tentativas = [
         caminho_preferencial,
+        f"data/{nome_arquivo_fallback}",
         os.path.join(os.getcwd(), nome_arquivo_fallback),
-        f"/content/{nome_arquivo_fallback}",
-        f"/content/drive/MyDrive/{nome_arquivo_fallback}"
+        f"/content/{nome_arquivo_fallback}"
     ]
     for c in caminhos_tentativas:
         if os.path.exists(c):
@@ -281,13 +282,9 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
     st.markdown("---")
 
-    # Caso não seja localizado no Google Drive, permite upload direto
+    # Caso não seja localizado, permite upload direto
     if df_fato is None or df_fato.empty:
-        st.warning(f"⚠️ A planilha de {item_plural} não foi localizada automaticamente no Google Drive.")
-        st.markdown("**Como resolver:**\n"
-                    "1. Certifique-se de montar o Google Drive no Colab (`drive.mount('/content/drive')`).\n"
-                    f"2. Ou selecione e faça o **upload do arquivo de {item_plural}** diretamente abaixo:")
-
+        st.warning(f"⚠️ A planilha de {item_plural} não foi localizada automaticamente na pasta data/ do repositório.")
         uploaded_file = st.file_uploader(f"Enviar arquivo de {item_plural}", type=["xlsx", "xls"], key=f"up_{titulo_item}")
         if uploaded_file is not None:
             try:
@@ -417,7 +414,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
         st.markdown("---")
 
-        # Gráfico de Barras Moderno, Isento e Compatível com Plotly
+        # Gráfico de Barras Moderno e Neutro
         st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
@@ -425,7 +422,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=True)
 
         if not df_dist.empty:
-            # Escala personalizada em degradê neutro Teal/Slate
             escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
 
             fig_bar = px.bar(
@@ -438,18 +434,16 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 color_continuous_scale=escala_neutra
             )
 
-            # Estilização correta e segura das barras
             fig_bar.update_traces(
                 textposition="outside",
                 textfont=dict(size=12, color="#0f172a", family="Inter, sans-serif"),
                 marker=dict(
                     line=dict(color='rgba(255, 255, 255, 0.9)', width=1.2),
-                    cornerradius=4  # Propriedade exata e válida no Plotly para arredondamento
+                    cornerradius=4
                 ),
                 hovertemplate="<b>%{y}</b><br>Ambientes Atendidos: <b>%{x}</b><extra></extra>"
             )
 
-            # Layout minimalista, limpo e neutro
             max_val = df_dist["Quantidade de Ambientes"].max()
             fig_bar.update_layout(
                 yaxis={
@@ -457,7 +451,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                     "tickfont": dict(size=12, color="#334155", family="Inter, sans-serif")
                 },
                 xaxis={
-                    "range": [0, max_val * 1.12], # Evita corte numérico no topo da barra
+                    "range": [0, max_val * 1.12],
                     "tickfont": dict(size=11, color="#64748b"),
                     "showgrid": True,
                     "gridcolor": "rgba(226, 232, 240, 0.7)",
@@ -516,139 +510,4 @@ if painel_selecionado == "Visão Geral":
             <div class="kpi-lbl-membros">Total de Membros SPAI</div>
         </div>
     ''', unsafe_allow_html=True)
-    top2.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{plenos}</div><div class="kpi-lbl-top">Membros Plenos</div></div>', unsafe_allow_html=True)
-    top3.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{associados}</div><div class="kpi-lbl-top">Membros Associados</div></div>', unsafe_allow_html=True)
-    top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
-
-    st.write("")
-
-    sec1, sec2, sec3, sec4, sec5, sec6, sec7 = st.columns(7)
-    sec1.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{parques}</div><div class="kpi-lbl-sec">Parques Tecnológicos</div></div>', unsafe_allow_html=True)
-    sec2.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{incubadoras}</div><div class="kpi-lbl-sec">Incubadoras</div></div>', unsafe_allow_html=True)
-    sec3.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros}</div><div class="kpi-lbl-sec">Centros de Inovação</div></div>', unsafe_allow_html=True)
-    sec4.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{hubs}</div><div class="kpi-lbl-sec">Hubs de Inovação</div></div>', unsafe_allow_html=True)
-    sec5.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{aceleradoras}</div><div class="kpi-lbl-sec">Aceleradoras</div></div>', unsafe_allow_html=True)
-    sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
-    sec7.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{distritos}</div><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # FILTROS E SEGMENTADORES DE DADOS (CHICLET SLICER)
-    st.subheader("🔍 Filtros e Segmentadores")
-
-    col_b_categorias = df_spai.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
-    cats_formatadas = list(set([c.title() for c in col_b_categorias if c != ""]))
-    cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
-    opcoes_categorias = ["Todas"] + cats_ordenadas
-
-    st.markdown("**Selecione uma das categorias:**")
-    if hasattr(st, "pills"):
-        cat_sel = st.pills(
-            label="Selecione uma das categorias",
-            options=opcoes_categorias,
-            default="Todas",
-            label_visibility="collapsed"
-        )
-    else:
-        cat_sel = st.selectbox("Categoria:", opcoes_categorias)
-
-    df_filt = df_spai.copy()
-    if cat_sel and cat_sel != "Todas":
-        df_filt = df_filt[df_filt.iloc[:, 1].astype(str).str.strip().str.title() == cat_sel]
-
-    st.write("")
-
-    c1, c2, c3 = st.columns(3)
-
-    regioes_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 2].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 2 else ["Todas"]
-    cidades_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 3].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 3 else ["Todas"]
-    tipos_unicos = ["Todos"] + sorted(list(df_filt.iloc[:, 4].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 4 else ["Todos"]
-
-    regiao_sel = c1.selectbox("Região Administrativa", regioes_unicas)
-    cidade_sel = c2.selectbox("Município", cidades_unicas)
-    tipo_sel = c3.selectbox("Tipo (Pleno / Associado)", tipos_unicos)
-
-    if regiao_sel != "Todas" and df_filt.shape[1] > 2:
-        df_filt = df_filt[df_filt.iloc[:, 2].astype(str).str.strip() == regiao_sel]
-    if cidade_sel != "Todas" and df_filt.shape[1] > 3:
-        df_filt = df_filt[df_filt.iloc[:, 3].astype(str).str.strip() == cidade_sel]
-    if tipo_sel != "Todos" and df_filt.shape[1] > 4:
-        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip() == tipo_sel]
-
-    st.write("")
-    col_m, col_l = st.columns([6, 4])
-
-    col_id_orig = df_filt.columns[0]
-    col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
-
-    with col_m:
-        df_m = df_filt.dropna(subset=["Lat", "Lon"])
-        if not df_m.empty:
-            hover_dict = {"Lat": False, "Lon": False}
-            labels_dict = {}
-            if df_filt.shape[1] > 0: hover_dict[df_filt.columns[0]] = True; labels_dict[df_filt.columns[0]] = "ID"
-            if df_filt.shape[1] > 1: hover_dict[df_filt.columns[1]] = True; labels_dict[df_filt.columns[1]] = "Categoria"
-            if df_filt.shape[1] > 2: hover_dict[df_filt.columns[2]] = True; labels_dict[df_filt.columns[2]] = "Região Administrativa"
-            if df_filt.shape[1] > 3: hover_dict[df_filt.columns[3]] = True; labels_dict[df_filt.columns[3]] = "Município"
-            if df_filt.shape[1] > 4: hover_dict[df_filt.columns[4]] = True; labels_dict[df_filt.columns[4]] = "Tipo"
-
-            fig = px.scatter_mapbox(
-                df_m, lat="Lat", lon="Lon",
-                hover_name=col_nome_orig,
-                hover_data=hover_dict,
-                labels=labels_dict,
-                zoom=6.1, center={"lat": -22.3, "lon": -48.8},
-                mapbox_style="carto-positron", height=480
-            )
-            fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
-            fig.update_layout(margin={"r":0, "t":0, "l":0, "b":0})
-            st.plotly_chart(fig, width='stretch')
-
-    with col_l:
-        st.markdown("<h4 style='text-align: center;'>Nome do Ambiente</h4>", unsafe_allow_html=True)
-
-        df_exibicao = df_filt[[col_id_orig, col_nome_orig]].copy()
-        df_exibicao.columns = ["ID", "Nome do Ambiente"]
-        df_exibicao["ID"] = pd.to_numeric(df_exibicao["ID"], errors="coerce").fillna(0).astype(int)
-        df_exibicao = df_exibicao.set_index("ID")
-
-        st.dataframe(
-            df_exibicao,
-            column_config={
-                "Nome do Ambiente": st.column_config.TextColumn("Nome do Ambiente", width="large")
-            },
-            width='stretch',
-            height=430
-        )
-
-# ====================================================
-# PAINEL 2: VERTICAIS TECNOLÓGICAS
-# ====================================================
-elif painel_selecionado == "Verticais Tecnológicas":
-    explicacao_verticais = (
-        "As <b>Verticais Tecnológicas</b> representam os <b>domínios de conhecimento técnico, ferramentas e tecnologias habilitadoras</b> "
-        "(como <i>Inteligência Artificial, Biotecnologia, IoT, Robótica, Nanotecnologia, Big Data</i>) desenvolvidos ou aplicados nos ambientes de inovação.<br><br>"
-        "🎯 <b>Impacto no Empreendedorismo:</b> Indicam a <b>capacidade tecnológica e científica</b> que os ecossistemas locais possuem para apoiar startups, gerar patentes, "
-        "promover a transferência de tecnologia da academia para a indústria e solucionar desafios complexos por meio de inovação profunda (<i>Deep Techs</i>)."
-    )
-    renderizar_painel_fato(df_verticais, "Vertical Tecnológica", "Verticais Tecnológicas", explicacao_verticais)
-
-# ====================================================
-# PAINEL 3: SEGMENTOS DE MERCADO
-# ====================================================
-elif painel_selecionado == "Segmentos de Mercado":
-    explicacao_segmentos = (
-        "Os <b>Segmentos de Mercado</b> correspondem aos <b>setores econômicos, indústrias e cadeias de valor finais</b> "
-        "(como <i>Agronegócio, Saúde, Educação, Finanças, Logística, Energia, Cidades Inteligentes</i>) atendidos pelas soluções do ecossistema.<br><br>"
-        "🎯 <b>Impacto no Empreendedorismo:</b> Definem o <b>mercado consumidor, a demanda real e o modelo de negócios</b> das empresas e startups residentes. "
-        "Ajudam a identificar oportunidades de <i>Open Innovation</i> (Inovação Aberta) com grandes corporações e a direcionar novos negócios para mercados com alto potencial de tração e escala."
-    )
-    renderizar_painel_fato(df_segmentos, "Segmento de Mercado", "Segmentos de Mercado", explicacao_segmentos)
-
-# ----------------------------------------------------
-# RODAPÉ
-# ----------------------------------------------------
-st.markdown("---")
-f1, f2 = st.columns([1, 1])
-f1.caption("Fontes: Mapeamento do Sistema Paulista de Ambientes de Inovação (SPAI).")
-f2.caption(f"Última verificação: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    top2.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{plenos}</div><div class="kpi-lbl-top">Membros Plenos</div>
