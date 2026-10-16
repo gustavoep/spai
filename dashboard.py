@@ -379,6 +379,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if total_muns == 0:
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
+
         # Cálculo dinâmico do TOP 3 para o filtro ativo
         df_top_items = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_top_items.columns = ["Item", "Qtd"]
@@ -406,39 +407,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         card_top3_html = f'''
         <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
             <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
-                🏆 Top 3 {item_plural}
-            </div>
-            {linhas_top3_html}
-        </div>
-        '''
-        else:
-            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
-
-        card_top3_html = f'''
-        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
-                🏆 Top 3 {item_plural}
-            </div>
-            {linhas_top3_html}
-        </div>
-        '''
-        else:
-            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
-
-        card_top3_html = f'''
-        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 6px; text-align: center;">
-                🏆 Top 3 {item_plural}
-            </div>
-            {linhas_top3_html}
-        </div>
-        '''
-        else:
-            linhas_top3_html = '<div style="color: #e0f2fe; font-size: 11px; text-align: center;">Nenhum item registrado</div>'
-
-        card_top3_html = f'''
-        <div style="background: linear-gradient(135deg, #005f73 0%, #0a9396 100%); border-radius: 8px; padding: 10px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); height: 100%; display: flex; flex-direction: column; justify-content: center;">
-            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #94d2bd; letter-spacing: 0.5px; margin-bottom: 4px; text-align: center;">
                 🏆 Top 3 {item_plural}
             </div>
             {linhas_top3_html}
