@@ -70,7 +70,7 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Neutra e Polida
+# Estilização CSS Personalizada - Neutra, Polida e com Destaque para Filtros
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; padding-bottom: 0rem; }
@@ -140,11 +140,38 @@ st.markdown("""
     .kpi-lbl-sec { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
     .kpi-sub-sec { font-size: 9px; color: #64748b; font-style: italic; margin-top: 2px; }
 
+    /* Card Destaque - Filtro de Tipo de Membro */
+    .filter-card-tipo {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #cbd5e1;
+        border-left: 6px solid #005f73;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .filter-card-hdr {
+        font-size: 14px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .filter-card-sub {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 10px;
+    }
+
     div[data-testid="stPills"] button {
-        border-radius: 6px !important;
-        font-weight: 600 !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
         font-size: 13px !important;
-        padding: 6px 14px !important;
+        padding: 8px 18px !important;
         border: 1px solid #94a3b8 !important;
         transition: all 0.2s ease-in-out !important;
     }
@@ -578,30 +605,44 @@ if painel_selecionado == "Visão Geral":
 
     st.markdown("---")
 
-    # FILTROS E SEGMENTADORES DE DADOS (COM HIERARQUIA POR TIPO DE MEMBRO)
+    # ----------------------------------------------------
+    # FILTROS E SEGMENTADORES DE DADOS (COM DESTAQUE VISUAL EXECUTIVO)
+    # ----------------------------------------------------
     st.subheader("🔍 Filtros e Segmentadores")
 
-    st.markdown("**1. Tipo de Membro:**")
-    opcoes_tipo = ["Todos", "Membros Plenos", "Membros Associados"]
-    if hasattr(st, "pills"):
-        tipo_sel = st.pills("tipo_membro", opcoes_tipo, default="Todos", label_visibility="collapsed")
-    else:
-        tipo_sel = st.radio("Tipo de Membro:", opcoes_tipo, horizontal=True)
+    # Card Executivo de Alto Destaque para Seleção do Tipo de Membro
+    st.markdown(f"""
+    <div class="filter-card-tipo">
+        <div class="filter-card-hdr">🏛️ PASSO 1: Selecione o Tipo de Membro SPAI</div>
+        <div class="filter-card-sub">Escolha a categoria principal de vinculação para atualizar dinamicamente as opções de formato de ambiente abaixo:</div>
+    </div>
+    """, unsafe_allow_html=True)
 
+    rotulo_todos = f"🌐 Todos os Membros ({total_membros})"
+    rotulo_plenos = f"🏛️ Membros Plenos ({plenos})"
+    rotulo_associados = f"🤝 Membros Associados ({associados})"
+    opcoes_tipo_display = [rotulo_todos, rotulo_plenos, rotulo_associados]
+
+    if hasattr(st, "pills"):
+        tipo_sel_display = st.pills("tipo_membro_highlight", opcoes_tipo_display, default=rotulo_todos, label_visibility="collapsed")
+    else:
+        tipo_sel_display = st.radio("Tipo de Membro:", opcoes_tipo_display, horizontal=True)
+
+    # Filtragem primária pelo Tipo de Membro
     df_filt = df_spai.copy()
-    if tipo_sel == "Membros Plenos" and df_filt.shape[1] > 4:
+    if "Plenos" in str(tipo_sel_display) and df_filt.shape[1] > 4:
         df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Pleno"]
-    elif tipo_sel == "Membros Associados" and df_filt.shape[1] > 4:
+    elif "Associados" in str(tipo_sel_display) and df_filt.shape[1] > 4:
         df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
 
-    # Extração dinâmica de categorias disponíveis com base no Tipo de Membro selecionado
+    # Extração dinâmica de categorias disponíveis resultantes do Tipo de Membro
     col_b_categorias = df_filt.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
     cats_formatadas = list(set([c.title() for c in col_b_categorias if c != ""]))
     cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
     opcoes_categorias = ["Todas"] + cats_ordenadas
 
     st.write("")
-    st.markdown("**2. Categoria do Ambiente:**")
+    st.markdown("**📂 PASSO 2: Categoria / Formato do Ambiente:**")
     if hasattr(st, "pills"):
         cat_sel = st.pills(
             label="Categoria do Ambiente",
@@ -618,6 +659,7 @@ if painel_selecionado == "Visão Geral":
 
     st.write("")
 
+    st.markdown("**📍 PASSO 3: Filtros de Localização Regional:**")
     c1, c2 = st.columns(2)
 
     regioes_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 2].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 2 else ["Todas"]
