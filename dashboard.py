@@ -209,6 +209,72 @@ df_spai = carregar_base_geral()
 df_segmentos = carregar_excel_fato(CAMINHO_SEGMENTOS)
 df_verticais = carregar_excel_fato(CAMINHO_VERTICAIS)
 
+# Função para consultar Verticais e Segmentos de um ambiente específico
+def buscar_detalhes_ambiente(nome_ambiente):
+    key = normalizar_texto(nome_ambiente)
+    verts, segs = [], []
+    
+    if df_verticais is not None and not df_verticais.empty:
+        col_n = None
+        col_a = None
+        for c in df_verticais.columns:
+            if any(p in str(c).lower() for p in ["nome", "ambiente", "instituição", "instituicao"]):
+                col_n = c
+            if any(p in str(c).lower() for p in ["vertical", "segmento", "área", "area", "atuação", "atuacao"]):
+                col_a = c
+        col_n = col_n or df_verticais.columns[0]
+        col_a = col_a or df_verticais.columns[-1]
+        
+        m = df_verticais[df_verticais[col_n].astype(str).apply(normalizar_texto) == key]
+        if not m.empty:
+            verts = sorted(m[col_a].dropna().astype(str).str.strip().unique())
+
+    if df_segmentos is not None and not df_segmentos.empty:
+        col_n = None
+        col_a = None
+        for c in df_segmentos.columns:
+            if any(p in str(c).lower() for p in ["nome", "ambiente", "instituição", "instituicao"]):
+                col_n = c
+            if any(p in str(c).lower() for p in ["vertical", "segmento", "área", "area", "atuação", "atuacao"]):
+                col_a = c
+        col_n = col_n or df_segmentos.columns[0]
+        col_a = col_a or df_segmentos.columns[-1]
+        
+        m = df_segmentos[df_segmentos[col_n].astype(str).apply(normalizar_texto) == key]
+        if not m.empty:
+            segs = sorted(m[col_a].dropna().astype(str).str.strip().unique())
+
+    return verts, segs
+
+# Modal Popup com as informações detalhadas do Ambiente
+if hasattr(st, "dialog"):
+    @st.dialog("🏛️ Detalhes do Ambiente de Inovação")
+    def exibir_popup_ambiente(dados):
+        st.subheader(dados["nome"])
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f"**ID SPAI:** `{dados['id']}`")
+            st.markdown(f"**Categoria:** {dados['categoria']}")
+            st.markdown(f"**Tipo:** {dados['tipo']}")
+        with c2:
+            st.markdown(f"**Município:** {dados['municipio']}")
+            st.markdown(f"**Região Administrativa:** {dados['regiao']}")
+            
+        st.markdown("---")
+        
+        if dados["verticais"]:
+            st.markdown("**💻 Verticais Tecnológicas Mapeadas:**")
+            st.write(", ".join(dados["verticais"]))
+        else:
+            st.caption("ℹ️ Verticais Tecnológicas: Não mapeadas na fase atual.")
+
+        if dados["segmentos"]:
+            st.markdown("**🏢 Segmentos de Mercado Mapeados:**")
+            st.write(", ".join(dados["segmentos"]))
+        else:
+            st.caption("ℹ️ Segmentos de Mercado: Não mapeados na fase atual.")
+
 # Mapeamento mestre de dados do SPAI pelo Nome do Ambiente
 col_spai_id = df_spai.columns[0]
 col_spai_cat = df_spai.columns[1] if df_spai.shape[1] > 1 else None
@@ -589,7 +655,51 @@ if painel_selecionado == "Visão Geral":
                 margin={"r":0, "t":0, "l":0, "b":0}
             )
             fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
-            st.plotly_chart(fig, width='stretch')
+
+            # Captura eventos de seleção ao clicar nos pontos do mapa
+            map_event = st.plotly_chart(
+                fig,
+                on_select="rerun",
+                selection_mode="points",
+                width='stretch'
+            )
+
+            # Ativa a modal popup de detalhes quando um ponto é clicado
+            if map_event and isinstance(map_event, dict) and "selection" in map_event:
+                pts = map_event["selection"].get("points", [])
+                if pts:
+                    idx_ponto = pts[0].get("point_index")
+                    if idx_ponto is not None and idx_ponto < len(df_m):
+                        row_sel = df_m.iloc[idx_ponto]
+                        
+                        nome_env = str(row_sel[col_nome_orig]).strip()
+                        id_env = int(pd.to_numeric(row_sel[col_id_orig], errors="coerce") or 0)
+                        cat_env = str(row_sel.iloc[1]).strip().title() if df_filt.shape[1] > 1 else ""
+                        reg_env = str(row_sel.iloc[2]).strip() if df_filt.shape[1] > 2 else ""
+                        mun_env = str(row_sel.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
+                        tipo_env = str(row_sel.iloc[4]).strip().title() if df_filt.shape[1] > 4 else ""
+                        
+                        v_env, s_env = buscar_detalhes_ambiente(nome_env)
+                        
+                        dados_popup = {
+                            "nome": nome_env,
+                            "id": id_env,
+                            "categoria": cat_env,
+                            "regiao": reg_env,
+                            "municipio": mun_env,
+                            "tipo": tipo_env,
+                            "verticais": v_env,
+                            "segmentos": s_env
+                        }
+                        
+                        if hasattr(st, "dialog"):
+                            exibir_popup_ambiente(dados_popup)
+                        else:
+                            with st.expander(f"📍 Detalhes de {nome_env}", expanded=True):
+                                st.write(f"**ID SPAI:** `{id_env}` | **Categoria:** {cat_env} | **Tipo:** {tipo_env}")
+                                st.write(f"**Município:** {mun_env} | **Região:** {reg_env}")
+                                if v_env: st.write("**Verticais:** " + ", ".join(v_env))
+                                if s_env: st.write("**Segmentos:** " + ", ".join(s_env))
         else:
             st.warning("⚠️ Não há coordenadas geográficas válidas para exibir no mapa com os filtros selecionados.")
 
