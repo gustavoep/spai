@@ -132,6 +132,9 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     .kpi-val-sec { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
     .kpi-lbl-sec { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
@@ -485,8 +488,6 @@ if painel_selecionado == "Visão Geral":
     else:
         parques = incubadoras = centros = centros_conexao = aceleradoras = outros = 0
 
-    distritos = 6
-
     top1, top2, top3, top4 = st.columns(4)
     top1.markdown(f'''
         <div class="kpi-box-membros">
@@ -507,7 +508,7 @@ if painel_selecionado == "Visão Geral":
     sec4.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros_conexao}</div><div class="kpi-lbl-sec">Centros de Conexão</div></div>', unsafe_allow_html=True)
     sec5.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{aceleradoras}</div><div class="kpi-lbl-sec">Aceleradoras</div></div>', unsafe_allow_html=True)
     sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
-    sec7.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{distritos}</div><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
+    sec7.markdown('<div class="kpi-box-sec"><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
 
     st.markdown("---")
 
