@@ -23,12 +23,13 @@ def normalizar_texto(txt):
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
-# Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras e Centros de Inovação
+# Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
 def ordenar_categorias_prioritarias(lista_cats):
     ordem_prioritaria = [
         "parque tecnologico", "parques tecnologicos",
         "incubadora", "incubadoras",
-        "centro de inovacao", "centros de inovacao"
+        "centro de inovacao", "centros de inovacao",
+        "centro de conexao", "centros de conexao"
     ]
     def prioridade_chave(cat):
         c_norm = normalizar_texto(cat)
@@ -36,7 +37,8 @@ def ordenar_categorias_prioritarias(lista_cats):
             if item in c_norm or c_norm in item:
                 if "parque" in item: return 0
                 if "incubadora" in item: return 1
-                if "centro" in item: return 2
+                if "centro de inovacao" in item or "centros de inovacao" in item: return 2
+                if "centro de conexao" in item or "centros de conexao" in item: return 3
         return 999
     return sorted(lista_cats, key=lambda c: (prioridade_chave(c), c))
 
@@ -243,7 +245,7 @@ st.sidebar.info("""
 O **SPAI** é um programa da política pública de inovação do Estado de São Paulo, gerido pela **Secretaria de Ciência, Tecnologia e Inovação (SCTI-SP)**.
 
 📌 **Objetivo:**
-Incentivar investimentos em inovação, fortalecer a pesquisa científica e conectar parques tecnológicos, incubadoras, centros de inovação, hubs e aceleradoras ao setor produtivo.
+Incentivar investimentos em inovação, fortalecer a pesquisa científica e conectar parques tecnológicos, incubadoras, centros de inovação, centros de conexão e aceleradoras ao setor produtivo.
 
 🔗 [Saiba mais no site oficial da SCTI](https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai)
 """)
@@ -475,13 +477,13 @@ if painel_selecionado == "Visão Geral":
         cat_col = df_spai.iloc[:, 1].astype(str).str.strip().str.upper()
         parques = cat_col.str.contains('PARQUE', na=False).sum()
         incubadoras = cat_col.str.contains('INCUBADORA', na=False).sum()
-        centros = cat_col.str.contains('CENTRO', na=False).sum()
-        hubs = cat_col.str.contains('HUB', na=False).sum()
+        centros = cat_col.str.contains('CENTRO DE INOV', na=False).sum()
+        centros_conexao = (cat_col.str.contains('HUB', na=False) | cat_col.str.contains('CONEX', na=False)).sum()
         aceleradoras = cat_col.str.contains('ACELERADORA', na=False).sum()
-        outros = total_membros - (parques + incubadoras + centros + hubs + aceleradoras)
+        outros = total_membros - (parques + incubadoras + centros + centros_conexao + aceleradoras)
         if outros < 0: outros = 0
     else:
-        parques = incubadoras = centros = hubs = aceleradoras = outros = 0
+        parques = incubadoras = centros = centros_conexao = aceleradoras = outros = 0
 
     distritos = 6
 
@@ -502,7 +504,7 @@ if painel_selecionado == "Visão Geral":
     sec1.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{parques}</div><div class="kpi-lbl-sec">Parques Tecnológicos</div></div>', unsafe_allow_html=True)
     sec2.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{incubadoras}</div><div class="kpi-lbl-sec">Incubadoras</div></div>', unsafe_allow_html=True)
     sec3.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros}</div><div class="kpi-lbl-sec">Centros de Inovação</div></div>', unsafe_allow_html=True)
-    sec4.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{hubs}</div><div class="kpi-lbl-sec">Hubs de Inovação</div></div>', unsafe_allow_html=True)
+    sec4.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros_conexao}</div><div class="kpi-lbl-sec">Centros de Conexão</div></div>', unsafe_allow_html=True)
     sec5.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{aceleradoras}</div><div class="kpi-lbl-sec">Aceleradoras</div></div>', unsafe_allow_html=True)
     sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
     sec7.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{distritos}</div><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
