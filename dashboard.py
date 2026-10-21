@@ -578,47 +578,57 @@ if painel_selecionado == "Visão Geral":
 
     st.markdown("---")
 
-    # FILTROS E SEGMENTADORES DE DADOS (CHICLET SLICER)
+    # FILTROS E SEGMENTADORES DE DADOS (COM HIERARQUIA POR TIPO DE MEMBRO)
     st.subheader("🔍 Filtros e Segmentadores")
 
-    col_b_categorias = df_spai.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
+    st.markdown("**1. Tipo de Membro:**")
+    opcoes_tipo = ["Todos", "Membros Plenos", "Membros Associados"]
+    if hasattr(st, "pills"):
+        tipo_sel = st.pills("tipo_membro", opcoes_tipo, default="Todos", label_visibility="collapsed")
+    else:
+        tipo_sel = st.radio("Tipo de Membro:", opcoes_tipo, horizontal=True)
+
+    df_filt = df_spai.copy()
+    if tipo_sel == "Membros Plenos" and df_filt.shape[1] > 4:
+        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Pleno"]
+    elif tipo_sel == "Membros Associados" and df_filt.shape[1] > 4:
+        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
+
+    # Extração dinâmica de categorias disponíveis com base no Tipo de Membro selecionado
+    col_b_categorias = df_filt.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
     cats_formatadas = list(set([c.title() for c in col_b_categorias if c != ""]))
     cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
     opcoes_categorias = ["Todas"] + cats_ordenadas
 
-    st.markdown("**Selecione uma das categorias:**")
+    st.write("")
+    st.markdown("**2. Categoria do Ambiente:**")
     if hasattr(st, "pills"):
         cat_sel = st.pills(
-            label="Selecione uma das categorias",
+            label="Categoria do Ambiente",
             options=opcoes_categorias,
             default="Todas",
+            key="cat_pills_vg",
             label_visibility="collapsed"
         )
     else:
-        cat_sel = st.selectbox("Categoria:", opcoes_categorias)
+        cat_sel = st.selectbox("Categoria:", opcoes_categorias, key="cat_select_vg")
 
-    df_filt = df_spai.copy()
     if cat_sel and cat_sel != "Todas":
         df_filt = df_filt[df_filt.iloc[:, 1].astype(str).str.strip().str.title() == cat_sel]
 
     st.write("")
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2 = st.columns(2)
 
     regioes_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 2].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 2 else ["Todas"]
-    cidades_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 3].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 3 else ["Todas"]
-    tipos_unicos = ["Todos"] + sorted(list(df_filt.iloc[:, 4].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 4 else ["Todos"]
-
     regiao_sel = c1.selectbox("Região Administrativa", regioes_unicas)
-    cidade_sel = c2.selectbox("Município", cidades_unicas)
-    tipo_sel = c3.selectbox("Tipo (Pleno / Associado)", tipos_unicos)
-
     if regiao_sel != "Todas" and df_filt.shape[1] > 2:
         df_filt = df_filt[df_filt.iloc[:, 2].astype(str).str.strip() == regiao_sel]
+
+    cidades_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 3].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 3 else ["Todas"]
+    cidade_sel = c2.selectbox("Município", cidades_unicas)
     if cidade_sel != "Todas" and df_filt.shape[1] > 3:
         df_filt = df_filt[df_filt.iloc[:, 3].astype(str).str.strip() == cidade_sel]
-    if tipo_sel != "Todos" and df_filt.shape[1] > 4:
-        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip() == tipo_sel]
 
     st.write("")
     col_m, col_l = st.columns([6, 4])
