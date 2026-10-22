@@ -584,24 +584,22 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             Itens_Atendidos=(col_atuacao, lambda x: ", ".join(sorted(x.dropna().astype(str).str.strip().unique())))
         ).reset_index()
 
-        col_qtd_nome = f"Nº de {item_plural}"
+        # Ordena internamente do maior para o menor número de itens
+        df_grouped = df_grouped.sort_values(by="Qtd_Itens", ascending=False)
+
         col_renames = {
             "SPAI_ID": "ID",
             col_nome: "Ambiente de Inovação",
-            "Qtd_Itens": col_qtd_nome,
             "Itens_Atendidos": f"{item_plural} Atendidos"
         }
 
-        df_grouped = df_grouped.rename(columns=col_renames)
+        # Remove a coluna numérica de quantidade para exibição
+        df_grouped = df_grouped.drop(columns=["Qtd_Itens"]).rename(columns=col_renames)
         df_grouped["ID"] = pd.to_numeric(df_grouped["ID"], errors="coerce").fillna(0).astype(int)
         df_grouped = df_grouped.set_index("ID")
 
-        # Ordenação Decrescente pelo número de verticais / segmentos
-        df_grouped = df_grouped.sort_values(by=col_qtd_nome, ascending=False)
-
         configs = {
             "Ambiente de Inovação": st.column_config.TextColumn("Ambiente de Inovação", width="medium"),
-            col_qtd_nome: st.column_config.NumberColumn(col_qtd_nome, format="%d", width="small"),
             f"{item_plural} Atendidos": st.column_config.TextColumn(f"{item_plural} Atendidos", width="large")
         }
 
