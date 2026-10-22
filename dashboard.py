@@ -23,7 +23,7 @@ def normalizar_texto(txt):
     if not isinstance(txt, str):
         txt = str(txt) if pd.notna(txt) else ""
     txt = txt.strip().lower()
-    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-utf-8') if hasattr(unicodedata, 'normalize') else txt
+    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
