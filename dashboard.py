@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 # Caminhos exatos no GitHub / Repositório
 CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
+CAMINHO_LOGO_SCTI = "assets/SCTI.png"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
 CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 CAMINHO_CTI = "assets/CTI.png"
@@ -325,6 +326,12 @@ for _, r in df_spai.iterrows():
 # ----------------------------------------------------
 # BARRA LATERAL - NAVEGAÇÃO ENTRE PAINÉIS
 # ----------------------------------------------------
+
+# Logo da SCTI exibido ACIMA do logo do SPAI
+if os.path.exists(CAMINHO_LOGO_SCTI):
+    st.sidebar.image(CAMINHO_LOGO_SCTI, width='stretch')
+
+# Logo Horizontal do SPAI
 if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
     st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
 
@@ -350,7 +357,7 @@ Incentivar investimentos em inovação, fortalecer a pesquisa científica e cone
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
-# Função genérica de renderização de painel fato
+# Função genérica de renderização de painel fato com interatividade Treemap -> Tabela
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
     st.caption(f"Mapeamento e distribuição de {item_plural.lower()} nos ambientes de inovação de São Paulo")
@@ -427,7 +434,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if cat_sel and cat_sel != "Todas":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Categoria"] == cat_sel]
 
-        # Dropdowns Secundários (Vertical/Segmento em Primeiro Lugar, depois Região, Município, Tipo)
+        # Dropdowns Secundários
         f_cols = st.columns(4)
 
         atuacao_list = ["Todos"] + sorted([a for a in df_filt_f[col_atuacao].dropna().astype(str).str.strip().unique() if a != ""])
@@ -462,7 +469,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             total_muns = total_amb
         media_items = round(len(df_filt_f) / max(total_amb, 1), 1)
 
-        # Layout da linha superior dos Cards de KPI
         k1, k2, k3, k4 = st.columns(4)
         k1.markdown(f'<div class="metric-card"><div class="metric-val">{total_amb}</div><div class="metric-lbl">Ambientes Mapeados</div></div>', unsafe_allow_html=True)
         k2.markdown(f'<div class="metric-card"><div class="metric-val">{total_items}</div><div class="metric-lbl">{item_plural}</div></div>', unsafe_allow_html=True)
@@ -475,10 +481,13 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         # 1º: TREEMAP (DISTRIBUIÇÃO DOS AMBIENTES)
         # ----------------------------------------------------
         st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
+        st.caption("💡 *Clique em qualquer bloco do gráfico para filtrar a tabela detalhada abaixo:*")
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
         df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
+
+        item_clicado_grafico = None
 
         if not df_dist.empty:
             escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
@@ -507,16 +516,43 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 font=dict(family="Inter, sans-serif", color="#334155")
             )
 
-            st.plotly_chart(fig_tree, width='stretch')
+            # Evento de clique habilitado no Treemap
+            tree_event = st.plotly_chart(
+                fig_tree,
+                on_select="rerun",
+                selection_mode="points",
+                key=f"tree_chart_{titulo_item}",
+                width='stretch'
+            )
+
+            # Extração do bloco clicado
+            if tree_event and isinstance(tree_event, dict) and "selection" in tree_event:
+                pts = tree_event["selection"].get("points", [])
+                if pts:
+                    p0 = pts[0]
+                    lbl = p0.get("label") or p0.get("id")
+                    if lbl:
+                        item_clicado_grafico = str(lbl).strip()
+                    else:
+                        idx_p = p0.get("point_index")
+                        if idx_p is not None and idx_p < len(df_dist):
+                            item_clicado_grafico = str(df_dist.iloc[idx_p][titulo_item]).strip()
 
         st.markdown("---")
 
         # ----------------------------------------------------
-        # 2º: TABELA DETALHADA (RELAÇÃO COMPLETA DE AMBIENTES)
+        # 2º: TABELA DETALHADA INTERATIVA
         # ----------------------------------------------------
-        st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
+        df_table_source = df_filt_f.copy()
 
-        df_grouped = df_filt_f.groupby(["SPAI_ID", col_nome], dropna=False).agg(
+        if item_clicado_grafico:
+            st.subheader(f"📋 Relação Completa de Ambientes em **{item_clicado_grafico}**")
+            st.info(f"🎯 **Filtrado pelo Treemap:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique no bloco do gráfico novamente para limpar)*")
+            df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
+        else:
+            st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
+
+        df_grouped = df_table_source.groupby(["SPAI_ID", col_nome], dropna=False).agg(
             Qtd_Itens=(col_atuacao, "nunique"),
             Itens_Atendidos=(col_atuacao, lambda x: ", ".join(sorted(x.dropna().astype(str).str.strip().unique())))
         ).reset_index()
@@ -610,7 +646,6 @@ if painel_selecionado == "Visão Geral":
     # ----------------------------------------------------
     st.subheader("🔍 Filtros e Segmentadores")
 
-    # Card Executivo de Alto Destaque para Seleção do Tipo de Membro
     st.markdown(f"""
     <div class="filter-card-tipo">
         <div class="filter-card-hdr">🏛️ PASSO 1: Selecione o Tipo de Membro SPAI</div>
@@ -679,7 +714,7 @@ if painel_selecionado == "Visão Geral":
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
     with col_m:
-        # Tratamento blindado para coordenadas no mapa
+        # Tratamento para coordenadas no mapa
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
         df_m["Lon"] = pd.to_numeric(df_m["Lon"], errors="coerce")
@@ -716,7 +751,7 @@ if painel_selecionado == "Visão Geral":
                 width='stretch'
             )
 
-            # Ativa a modal popup de detalhes quando um ponto é clicado
+            # Modal popup de detalhes ao clicar no ponto do mapa
             if map_event and isinstance(map_event, dict) and "selection" in map_event:
                 pts = map_event["selection"].get("points", [])
                 if pts:
