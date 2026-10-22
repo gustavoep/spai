@@ -577,30 +577,23 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique na barra novamente para limpar)*")
                 df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
         else:
-            st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
+            st.subheader(f"📋 Relação Completa de Ambientes")
 
-        df_grouped = df_table_source.groupby(["SPAI_ID", col_nome], dropna=False).agg(
-            Qtd_Itens=(col_atuacao, "nunique"),
-            Itens_Atendidos=(col_atuacao, lambda x: ", ".join(sorted(x.dropna().astype(str).str.strip().unique())))
-        ).reset_index()
-
-        # Ordena internamente do maior para o menor número de itens
-        df_grouped = df_grouped.sort_values(by="Qtd_Itens", ascending=False)
+        # Mantém apenas os ambientes únicos filtrados
+        df_grouped = df_table_source[["SPAI_ID", col_nome]].drop_duplicates()
 
         col_renames = {
             "SPAI_ID": "ID",
-            col_nome: "Ambiente de Inovação",
-            "Itens_Atendidos": f"{item_plural} Atendidos"
+            col_nome: "Ambiente de Inovação"
         }
 
-        # Remove a coluna numérica de quantidade para exibição
-        df_grouped = df_grouped.drop(columns=["Qtd_Itens"]).rename(columns=col_renames)
+        df_grouped = df_grouped.rename(columns=col_renames)
         df_grouped["ID"] = pd.to_numeric(df_grouped["ID"], errors="coerce").fillna(0).astype(int)
+        df_grouped = df_grouped.sort_values(by="Ambiente de Inovação")
         df_grouped = df_grouped.set_index("ID")
 
         configs = {
-            "Ambiente de Inovação": st.column_config.TextColumn("Ambiente de Inovação", width="medium"),
-            f"{item_plural} Atendidos": st.column_config.TextColumn(f"{item_plural} Atendidos", width="large")
+            "Ambiente de Inovação": st.column_config.TextColumn("Ambiente de Inovação", width="large")
         }
 
         st.dataframe(
