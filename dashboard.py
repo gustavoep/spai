@@ -9,7 +9,6 @@ from datetime import datetime, timezone, timedelta
 CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_CTI = "assets/CTI.png"
-CAMINHO_LOGO_SCTI = "assets/SCTI.png"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
 CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 
@@ -327,13 +326,9 @@ for _, r in df_spai.iterrows():
 # BARRA LATERAL - NAVEGAÇÃO ENTRE PAINÉIS
 # ----------------------------------------------------
 
-# Logo do CTI exibido no TOPO da barra lateral (ACIMA do logo da SCTI)
+# Logo do CTI exibido no TOPO da barra lateral
 if os.path.exists(CAMINHO_CTI):
     st.sidebar.image(CAMINHO_CTI, width='stretch')
-
-# Logo da SCTI exibido ACIMA do logo do SPAI
-if os.path.exists(CAMINHO_LOGO_SCTI):
-    st.sidebar.image(CAMINHO_LOGO_SCTI, width='stretch')
 
 # Logo Horizontal do SPAI
 if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
