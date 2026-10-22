@@ -352,7 +352,9 @@ Incentivar investimentos em inovação, fortalecer a pesquisa científica e cone
 🔗 [Saiba mais no site oficial da SCTI](https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai)
 """)
 
-# Logo do Projeto Japi exibido logo abaixo da caixa informativa
+# Caixa de texto "Colaboradores:" exibida logo acima do logo do Projeto Japi
+st.sidebar.markdown("**Colaboradores:**")
+
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
