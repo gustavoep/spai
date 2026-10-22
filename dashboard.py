@@ -23,6 +23,24 @@ def normalizar_texto(txt):
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
+# Função para mapear itens para Grande Categoria / Macrossetor e cor correspondente
+def categorizar_macrossetor(nome):
+    n = normalizar_texto(nome)
+    if any(k in n for k in ['ia', 'inteligencia', 'software', 'ti', 'tecnologia da informacao', 'big data', 'cyber', 'comput', 'digital', 'cloud', 'sistemas', 'telecom', 'internet', 'hardware']):
+        return 'T.I. & Digital', '#1e40af' # Azul Escuro
+    elif any(k in n for k in ['saude', 'biotec', 'farma', 'medic', 'biomed', 'vida', 'saude humana', 'pharma']):
+        return 'Saúde & Biotecnologia', '#047857' # Verde Escuro
+    elif any(k in n for k in ['agro', 'campo', 'alimento', 'agronegocio', 'florest', 'agtech', 'pecuaria']):
+        return 'Agronegócio & Alimentos', '#b45309' # Âmbar/Laranja Escuro
+    elif any(k in n for k in ['industria', 'robot', 'engenh', 'mecan', 'manufat', 'materi', 'aero', 'automot', 'quimic', 'defesa', 'nanotec']):
+        return 'Engenharia & Indústria', '#b91c1c' # Vermelho Escuro
+    elif any(k in n for k in ['energ', 'cidade', 'mobilid', 'logist', 'ambiente', 'sustent', 'resid', 'saneam', 'smart city', 'clima']):
+        return 'Energia, Cidades & Meio Ambiente', '#0e7490' # Ciano Escuro
+    elif any(k in n for k in ['educa', 'finan', 'fintech', 'servico', 'social', 'varejo', 'comer', 'gov', 'jurid', 'turismo', 'midia']):
+        return 'Serviços, Finanças & Negócios', '#6d28d9' # Roxo Escuro
+    else:
+        return 'Outros Setores', '#475569' # Cinza Escuro
+
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
 def ordenar_categorias_prioritarias(lista_cats):
     ordem_prioritaria = [
@@ -42,7 +60,7 @@ def ordenar_categorias_prioritarias(lista_cats):
         return 999
     return sorted(lista_cats, key=lambda c: (prioridade_chave(c), c))
 
-# Configuração da Página (Primeiro comando Streamlit)
+# Configuração da Página
 st.set_page_config(
     page_title="SPAI - Ambientes de Inovação SP",
     page_icon=CAMINHO_CTI if os.path.exists(CAMINHO_CTI) else "🏛️",
@@ -70,20 +88,20 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Neutra, Polida e com Destaque para Filtros
+# Estilização CSS Personalizada - Alto Contraste e Legibilidade
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; padding-bottom: 0rem; }
 
     /* Card de Destaque Executivo - Total de Membros */
     .kpi-box-membros {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-        color: white;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: #ffffff;
         border-radius: 10px;
         padding: 16px 12px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-        border-left: 5px solid #0a9396;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+        border-left: 5px solid #0d9488;
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -98,57 +116,57 @@ st.markdown("""
     }
     .kpi-lbl-membros {
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-top: 6px;
-        color: #94d2bd;
+        color: #5eead4;
     }
 
     /* Cards Secundários do Topo */
     .kpi-box-top {
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-top: 4px solid #005f73;
+        border: 1px solid #cbd5e1;
+        border-top: 4px solid #0284c7;
         border-radius: 10px;
         padding: 14px 10px;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    .kpi-val-top { font-size: 32px; font-weight: 800; line-height: 1; color: #005f73; }
-    .kpi-lbl-top { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 6px; color: #475569; }
+    .kpi-val-top { font-size: 32px; font-weight: 800; line-height: 1; color: #0369a1; }
+    .kpi-lbl-top { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 6px; color: #1e293b; }
 
     /* Cards da Segunda Linha (Categorias) */
     .kpi-box-sec {
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-top: 3px solid #0a9396;
+        border: 1px solid #cbd5e1;
+        border-top: 3px solid #0d9488;
         border-radius: 8px;
         padding: 10px 6px;
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     .kpi-val-sec { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
-    .kpi-lbl-sec { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
-    .kpi-sub-sec { font-size: 9px; color: #64748b; font-style: italic; margin-top: 2px; }
+    .kpi-lbl-sec { font-size: 10px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
+    .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 2px; }
 
     /* Card Destaque - Filtro de Tipo de Membro */
     .filter-card-tipo {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border: 1px solid #cbd5e1;
-        border-left: 6px solid #005f73;
+        border: 1px solid #94a3b8;
+        border-left: 6px solid #0284c7;
         border-radius: 12px;
         padding: 16px 20px;
         margin-bottom: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     }
     .filter-card-hdr {
         font-size: 14px;
@@ -163,7 +181,7 @@ st.markdown("""
     }
     .filter-card-sub {
         font-size: 12px;
-        color: #64748b;
+        color: #334155;
         margin-bottom: 10px;
     }
 
@@ -172,42 +190,43 @@ st.markdown("""
         font-weight: 700 !important;
         font-size: 13px !important;
         padding: 8px 18px !important;
-        border: 1px solid #94a3b8 !important;
+        border: 1px solid #64748b !important;
         transition: all 0.2s ease-in-out !important;
     }
 
     .metric-card {
         background-color: #ffffff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
         padding: 12px;
         text-align: center;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    .metric-val { font-size: 24px; font-weight: bold; color: #005f73; }
-    .metric-lbl { font-size: 12px; color: #64748b; font-weight: 600; }
+    .metric-val { font-size: 26px; font-weight: 800; color: #0369a1; }
+    .metric-lbl { font-size: 12px; color: #0f172a; font-weight: 700; }
 
     .concept-card {
         background-color: #f8fafc;
-        border-left: 4px solid #005f73;
+        border: 1px solid #cbd5e1;
+        border-left: 5px solid #0284c7;
         border-radius: 8px;
         padding: 14px 18px;
         margin-bottom: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
     .concept-title {
         font-size: 15px;
-        font-weight: 700;
+        font-weight: 800;
         color: #0f172a;
         margin-bottom: 6px;
     }
     .concept-text {
         font-size: 13px;
-        color: #334155;
+        color: #1e293b;
         line-height: 1.5;
     }
     </style>
@@ -358,7 +377,7 @@ st.sidebar.markdown("**Colaboradores:**")
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
-# Função genérica de renderização de painel fato com interatividade Treemap -> Tabela
+# Função para renderização de painel fato com Gráfico de Barras Horizontais
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
     st.caption(f"Mapeamento e distribuição de {item_plural.lower()} nos ambientes de inovação de São Paulo")
@@ -417,7 +436,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         # ----------------------------------------------------
         # FILTROS CENTRALIZADOS NA PÁGINA
         # ----------------------------------------------------
-        st.markdown("<h4 style='text-align: center; color: #005f73; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #0284c7; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
 
         cats_unicas = [c for c in df_base["SPAI_Categoria"].unique() if c != ""]
         cats_ordenadas = ordenar_categorias_prioritarias(cats_unicas)
@@ -425,7 +444,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
         col_f1, col_f2, col_f3 = st.columns([1, 8, 1])
         with col_f2:
-            st.markdown("<div style='text-align: center; font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 4px;'>Categoria do Ambiente:</div>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align: center; font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 4px;'>Categoria do Ambiente:</div>", unsafe_allow_html=True)
             if hasattr(st, "pills"):
                 cat_sel = st.pills(f"cat_{titulo_item}", cats_opts, default="Todas", label_visibility="collapsed")
             else:
@@ -479,77 +498,104 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         st.markdown("---")
 
         # ----------------------------------------------------
-        # 1º: TREEMAP (DISTRIBUIÇÃO DOS AMBIENTES)
+        # GRÁFICO DE BARRAS HORIZONTAIS COM TOP 10 + "OUTROS"
         # ----------------------------------------------------
-        st.subheader(f"📊 Distribuição dos Ambientes por {titulo_item}")
-        st.caption("💡 *Clique em qualquer bloco do gráfico para filtrar a tabela detalhada abaixo:*")
+        st.subheader(f"📊 Distribuição por {titulo_item}")
+        
+        # Opções de Drill-down / Exibição completa
+        col_g1, col_g2 = st.columns([7, 3])
+        with col_g2:
+            exibir_todos = st.checkbox(
+                f"🔍 Mostrar todas ({total_items}) sem agrupar em 'Outros'",
+                value=False,
+                key=f"chk_todos_{titulo_item}"
+            )
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
         df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
 
-        item_clicado_grafico = None
-
+        outros_items = []
         if not df_dist.empty:
-            escala_neutra = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
+            if not exibir_todos and len(df_dist) > 10:
+                top10 = df_dist.iloc[:10].copy()
+                outros_items = df_dist.iloc[10:][titulo_item].tolist()
+                outros_qtd = df_filt_f[df_filt_f[col_atuacao].isin(outros_items)][col_nome].nunique()
+                outros_df = pd.DataFrame([{titulo_item: "Outros", "Quantidade de Ambientes": outros_qtd}])
+                df_chart = pd.concat([top10, outros_df], ignore_index=True)
+            else:
+                df_chart = df_dist.copy()
 
-            fig_tree = px.treemap(
-                df_dist,
-                path=[titulo_item],
-                values="Quantidade de Ambientes",
-                color="Quantidade de Ambientes",
-                color_continuous_scale=escala_neutra
+            # Mapeamento de Grande Categoria (Macrossetor) e Cor
+            df_chart[['Macro_Setor', 'Cor_Setor']] = df_chart[titulo_item].apply(lambda x: pd.Series(categorizar_macrossetor(x)))
+            color_map = dict(zip(df_chart['Macro_Setor'], df_chart['Cor_Setor']))
+
+            # Plotly Horizontal Bar Chart
+            fig_bar = px.bar(
+                df_chart,
+                x="Quantidade de Ambientes",
+                y=titulo_item,
+                orientation='h',
+                color="Macro_Setor",
+                color_discrete_map=color_map,
+                text="Quantidade de Ambientes"
             )
 
-            fig_tree.update_traces(
-                textinfo="label+value",
-                textfont=dict(size=13, family="Inter, sans-serif"),
-                hovertemplate="<b>%{label}</b><br>Ambientes Atendidos: <b>%{value}</b><extra></extra>",
-                marker=dict(cornerradius=4)
+            # Rótulos claros e de alto contraste sem sobreposição
+            fig_bar.update_traces(
+                textposition='outside',
+                cliponaxis=False,
+                textfont=dict(size=13, color='#0f172a', family='Inter, sans-serif'),
+                hovertemplate="<b>%{y}</b><br>Grande Categoria: <b>%{fullData.name}</b><br>Ambientes: <b>%{x}</b><extra></extra>"
             )
 
-            fig_tree.update_layout(
-                coloraxis_showscale=False,
-                height=480,
-                margin={"l": 10, "r": 10, "t": 20, "b": 20},
+            # Ajuste de layout, eixos e ordem (maior no topo)
+            max_val = df_chart["Quantidade de Ambientes"].max()
+            fig_bar.update_layout(
+                yaxis=dict(autorange="reversed", title="", tickfont=dict(size=12, color='#0f172a', family='Inter, sans-serif')),
+                xaxis=dict(title="Quantidade de Ambientes Atendidos", range=[0, max_val * 1.15], gridcolor='#f1f5f9'),
+                legend_title_text="Grande Categoria",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                height=max(420, len(df_chart) * 36),
+                margin=dict(l=10, r=40, t=40, b=20),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Inter, sans-serif", color="#334155")
+                font=dict(family="Inter, sans-serif", color="#0f172a")
             )
 
-            # Evento de clique habilitado no Treemap
-            tree_event = st.plotly_chart(
-                fig_tree,
+            bar_event = st.plotly_chart(
+                fig_bar,
                 on_select="rerun",
                 selection_mode="points",
-                key=f"tree_chart_{titulo_item}",
+                key=f"bar_chart_{titulo_item}",
                 width='stretch'
             )
 
-            # Extração do bloco clicado
-            if tree_event and isinstance(tree_event, dict) and "selection" in tree_event:
-                pts = tree_event["selection"].get("points", [])
+            item_clicado_grafico = None
+            if bar_event and isinstance(bar_event, dict) and "selection" in bar_event:
+                pts = bar_event["selection"].get("points", [])
                 if pts:
                     p0 = pts[0]
-                    lbl = p0.get("label") or p0.get("id")
+                    lbl = p0.get("y") or p0.get("label")
                     if lbl:
                         item_clicado_grafico = str(lbl).strip()
-                    else:
-                        idx_p = p0.get("point_index")
-                        if idx_p is not None and idx_p < len(df_dist):
-                            item_clicado_grafico = str(df_dist.iloc[idx_p][titulo_item]).strip()
 
         st.markdown("---")
 
         # ----------------------------------------------------
-        # 2º: TABELA DETALHADA INTERATIVA
+        # TABELA DETALHADA INTERATIVA
         # ----------------------------------------------------
         df_table_source = df_filt_f.copy()
 
         if item_clicado_grafico:
-            st.subheader(f"📋 Relação Completa de Ambientes em **{item_clicado_grafico}**")
-            st.info(f"🎯 **Filtrado pelo Treemap:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique no bloco do gráfico novamente para limpar)*")
-            df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
+            if item_clicado_grafico == "Outros" and outros_items:
+                st.subheader(f"📋 Relação de Ambientes nas categorias agrupadas em **Outros**")
+                st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo ambientes das menores categorias agrupadas em 'Outros'. *(Clique na barra novamente para limpar)*")
+                df_table_source = df_table_source[df_table_source[col_atuacao].isin(outros_items)]
+            else:
+                st.subheader(f"📋 Relação Completa de Ambientes em **{item_clicado_grafico}**")
+                st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique na barra novamente para limpar)*")
+                df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
         else:
             st.subheader(f"📋 Relação Completa de Ambientes e {item_plural} Atendidos")
 
@@ -643,7 +689,7 @@ if painel_selecionado == "Visão Geral":
     st.markdown("---")
 
     # ----------------------------------------------------
-    # FILTROS E SEGMENTADORES DE DADOS (COM DESTAQUE VISUAL EXECUTIVO)
+    # FILTROS E SEGMENTADORES DE DADOS
     # ----------------------------------------------------
     st.subheader("🔍 Filtros e Segmentadores")
 
@@ -664,14 +710,12 @@ if painel_selecionado == "Visão Geral":
     else:
         tipo_sel_display = st.radio("Tipo de Membro:", opcoes_tipo_display, horizontal=True)
 
-    # Filtragem primária pelo Tipo de Membro
     df_filt = df_spai.copy()
     if "Plenos" in str(tipo_sel_display) and df_filt.shape[1] > 4:
         df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Pleno"]
     elif "Associados" in str(tipo_sel_display) and df_filt.shape[1] > 4:
         df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
 
-    # Extração dinâmica de categorias disponíveis resultantes do Tipo de Membro
     col_b_categorias = df_filt.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
     cats_formatadas = list(set([c.title() for c in col_b_categorias if c != ""]))
     cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
@@ -715,7 +759,6 @@ if painel_selecionado == "Visão Geral":
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
     with col_m:
-        # Tratamento para coordenadas no mapa
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
         df_m["Lon"] = pd.to_numeric(df_m["Lon"], errors="coerce")
@@ -742,9 +785,8 @@ if painel_selecionado == "Visão Geral":
                 map_style="carto-positron",
                 margin={"r":0, "t":0, "l":0, "b":0}
             )
-            fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
+            fig.update_traces(marker=dict(size=14, color="#0284c7", opacity=0.85))
 
-            # Captura eventos de seleção ao clicar nos pontos do mapa
             map_event = st.plotly_chart(
                 fig,
                 on_select="rerun",
@@ -752,7 +794,6 @@ if painel_selecionado == "Visão Geral":
                 width='stretch'
             )
 
-            # Modal popup de detalhes ao clicar no ponto do mapa
             if map_event and isinstance(map_event, dict) and "selection" in map_event:
                 pts = map_event["selection"].get("points", [])
                 if pts:
