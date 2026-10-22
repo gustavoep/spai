@@ -15,31 +15,16 @@ CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 # Fuso horário oficial de Brasília (UTC-3)
 FUSO_BRASILIA = timezone(timedelta(hours=-3))
 
+# Paleta de Cores Institucionais SPAI / SCTI-SP
+PALETA_SPAI_ESCALA = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
+
 # Função para normalizar strings (remove acentos, maiúsculas e espaços extras)
 def normalizar_texto(txt):
     if not isinstance(txt, str):
         txt = str(txt) if pd.notna(txt) else ""
     txt = txt.strip().lower()
-    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
+    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-utf-8') if hasattr(unicodedata, 'normalize') else txt
     return txt
-
-# Função para mapear itens para Grande Categoria / Macrossetor e cor correspondente
-def categorizar_macrossetor(nome):
-    n = normalizar_texto(nome)
-    if any(k in n for k in ['ia', 'inteligencia', 'software', 'ti', 'tecnologia da informacao', 'big data', 'cyber', 'comput', 'digital', 'cloud', 'sistemas', 'telecom', 'internet', 'hardware']):
-        return 'T.I. & Digital', '#1e40af' # Azul Escuro
-    elif any(k in n for k in ['saude', 'biotec', 'farma', 'medic', 'biomed', 'vida', 'saude humana', 'pharma']):
-        return 'Saúde & Biotecnologia', '#047857' # Verde Escuro
-    elif any(k in n for k in ['agro', 'campo', 'alimento', 'agronegocio', 'florest', 'agtech', 'pecuaria']):
-        return 'Agronegócio & Alimentos', '#b45309' # Âmbar/Laranja Escuro
-    elif any(k in n for k in ['industria', 'robot', 'engenh', 'mecan', 'manufat', 'materi', 'aero', 'automot', 'quimic', 'defesa', 'nanotec']):
-        return 'Engenharia & Indústria', '#b91c1c' # Vermelho Escuro
-    elif any(k in n for k in ['energ', 'cidade', 'mobilid', 'logist', 'ambiente', 'sustent', 'resid', 'saneam', 'smart city', 'clima']):
-        return 'Energia, Cidades & Meio Ambiente', '#0e7490' # Ciano Escuro
-    elif any(k in n for k in ['educa', 'finan', 'fintech', 'servico', 'social', 'varejo', 'comer', 'gov', 'jurid', 'turismo', 'midia']):
-        return 'Serviços, Finanças & Negócios', '#6d28d9' # Roxo Escuro
-    else:
-        return 'Outros Setores', '#475569' # Cinza Escuro
 
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
 def ordenar_categorias_prioritarias(lista_cats):
@@ -88,20 +73,20 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Alto Contraste e Legibilidade
+# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste e Elegância)
 st.markdown("""
     <style>
     .block-container { padding-top: 1rem; padding-bottom: 0rem; }
 
     /* Card de Destaque Executivo - Total de Membros */
     .kpi-box-membros {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: #ffffff;
         border-radius: 10px;
         padding: 16px 12px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
-        border-left: 5px solid #0d9488;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        border-left: 5px solid #0a9396;
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -120,35 +105,35 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 0.8px;
         margin-top: 6px;
-        color: #5eead4;
+        color: #94d2bd;
     }
 
     /* Cards Secundários do Topo */
     .kpi-box-top {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
-        border-top: 4px solid #0284c7;
+        border-top: 4px solid #005f73;
         border-radius: 10px;
         padding: 14px 10px;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    .kpi-val-top { font-size: 32px; font-weight: 800; line-height: 1; color: #0369a1; }
+    .kpi-val-top { font-size: 32px; font-weight: 800; line-height: 1; color: #005f73; }
     .kpi-lbl-top { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 6px; color: #1e293b; }
 
     /* Cards da Segunda Linha (Categorias) */
     .kpi-box-sec {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
-        border-top: 3px solid #0d9488;
+        border-top: 3px solid #0a9396;
         border-radius: 8px;
         padding: 10px 6px;
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -162,11 +147,11 @@ st.markdown("""
     .filter-card-tipo {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         border: 1px solid #94a3b8;
-        border-left: 6px solid #0284c7;
+        border-left: 6px solid #005f73;
         border-radius: 12px;
         padding: 16px 20px;
         margin-bottom: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
     .filter-card-hdr {
         font-size: 14px;
@@ -200,23 +185,23 @@ st.markdown("""
         border-radius: 8px;
         padding: 12px;
         text-align: center;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.03);
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
-    .metric-val { font-size: 26px; font-weight: 800; color: #0369a1; }
+    .metric-val { font-size: 26px; font-weight: 800; color: #005f73; }
     .metric-lbl { font-size: 12px; color: #0f172a; font-weight: 700; }
 
     .concept-card {
         background-color: #f8fafc;
         border: 1px solid #cbd5e1;
-        border-left: 5px solid #0284c7;
+        border-left: 5px solid #005f73;
         border-radius: 8px;
         padding: 14px 18px;
         margin-bottom: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .concept-title {
         font-size: 15px;
@@ -377,7 +362,7 @@ st.sidebar.markdown("**Colaboradores:**")
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
-# Função para renderização de painel fato com Gráfico de Barras Horizontais
+# Função para renderização de painel fato com Gráfico de Barras Horizontais (Categorias Originais do SPAI)
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
     st.caption(f"Mapeamento e distribuição de {item_plural.lower()} nos ambientes de inovação de São Paulo")
@@ -436,7 +421,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         # ----------------------------------------------------
         # FILTROS CENTRALIZADOS NA PÁGINA
         # ----------------------------------------------------
-        st.markdown("<h4 style='text-align: center; color: #0284c7; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #005f73; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
 
         cats_unicas = [c for c in df_base["SPAI_Categoria"].unique() if c != ""]
         cats_ordenadas = ordenar_categorias_prioritarias(cats_unicas)
@@ -498,7 +483,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         st.markdown("---")
 
         # ----------------------------------------------------
-        # GRÁFICO DE BARRAS HORIZONTAIS COM TOP 10 + "OUTROS"
+        # GRÁFICO DE BARRAS HORIZONTAIS COM CLASSIFICAÇÃO ORIGINAL E CORES INSTITUCIONAIS
         # ----------------------------------------------------
         st.subheader(f"📊 Distribuição por {titulo_item}")
         
@@ -526,38 +511,33 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             else:
                 df_chart = df_dist.copy()
 
-            # Mapeamento de Grande Categoria (Macrossetor) e Cor
-            df_chart[['Macro_Setor', 'Cor_Setor']] = df_chart[titulo_item].apply(lambda x: pd.Series(categorizar_macrossetor(x)))
-            color_map = dict(zip(df_chart['Macro_Setor'], df_chart['Cor_Setor']))
-
-            # Plotly Horizontal Bar Chart
+            # Plotly Horizontal Bar Chart usando Cores Institucionais
             fig_bar = px.bar(
                 df_chart,
                 x="Quantidade de Ambientes",
                 y=titulo_item,
                 orientation='h',
-                color="Macro_Setor",
-                color_discrete_map=color_map,
+                color="Quantidade de Ambientes",
+                color_continuous_scale=PALETA_SPAI_ESCALA,
                 text="Quantidade de Ambientes"
             )
 
-            # Rótulos claros e de alto contraste sem sobreposição
+            # Rótulos externos legíveis e de alto contraste
             fig_bar.update_traces(
                 textposition='outside',
                 cliponaxis=False,
                 textfont=dict(size=13, color='#0f172a', family='Inter, sans-serif'),
-                hovertemplate="<b>%{y}</b><br>Grande Categoria: <b>%{fullData.name}</b><br>Ambientes: <b>%{x}</b><extra></extra>"
+                hovertemplate="<b>%{y}</b><br>Ambientes Atendidos: <b>%{x}</b><extra></extra>"
             )
 
-            # Ajuste de layout, eixos e ordem (maior no topo)
+            # Ajuste de layout e ordem (maior no topo)
             max_val = df_chart["Quantidade de Ambientes"].max()
             fig_bar.update_layout(
+                coloraxis_showscale=False,
                 yaxis=dict(autorange="reversed", title="", tickfont=dict(size=12, color='#0f172a', family='Inter, sans-serif')),
                 xaxis=dict(title="Quantidade de Ambientes Atendidos", range=[0, max_val * 1.15], gridcolor='#f1f5f9'),
-                legend_title_text="Grande Categoria",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                 height=max(420, len(df_chart) * 36),
-                margin=dict(l=10, r=40, t=40, b=20),
+                margin=dict(l=10, r=40, t=20, b=20),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 font=dict(family="Inter, sans-serif", color="#0f172a")
@@ -785,7 +765,7 @@ if painel_selecionado == "Visão Geral":
                 map_style="carto-positron",
                 margin={"r":0, "t":0, "l":0, "b":0}
             )
-            fig.update_traces(marker=dict(size=14, color="#0284c7", opacity=0.85))
+            fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
 
             map_event = st.plotly_chart(
                 fig,
