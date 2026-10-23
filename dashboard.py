@@ -53,6 +53,16 @@ st.set_page_config(
     layout="wide"
 )
 
+# Define o idioma do documento HTML como pt-BR para navegadores e celulares
+st.markdown(
+    """
+    <script>
+        document.documentElement.setAttribute('lang', 'pt-BR');
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
 # URL ao vivo da planilha do Google Sheets (Base Geral SPAI)
 GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1yXVrdrAZW9QCYHIfp2MsyIa2iFsVAhGZYxnOst_UG_M/export?format=csv&gid=1170767452"
 
