@@ -24,7 +24,7 @@ def normalizar_texto(txt):
     if not isinstance(txt, str):
         txt = str(txt) if pd.notna(txt) else ""
     txt = txt.strip().lower()
-    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
+    txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-utf-8') if hasattr(unicodedata, 'normalize') else txt
     return txt
 
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
@@ -605,12 +605,16 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 # PAINEL 1: VISÃO GERAL
 # ====================================================
 if painel_selecionado == "Visão Geral":
-    # Exibição sequencial do Logo Vertical e do Logo Horizontal do SPAI
-    if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
-        st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=320)
-    
-    if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
-        st.image(CAMINHO_LOGO_HORIZONTAL, width=320)
+    # Exibição dos dois logotipos alinhados na mesma linha (horizontalmente)
+    col_logo1, col_logo2, _ = st.columns([1.2, 1.8, 2])
+
+    with col_logo1:
+        if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
+            st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=220)
+
+    with col_logo2:
+        if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
+            st.image(CAMINHO_LOGO_HORIZONTAL, width=320)
 
     if not os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL) and not os.path.exists(CAMINHO_LOGO_HORIZONTAL):
         st.title("Visão Geral dos Ambientes de Inovação")
