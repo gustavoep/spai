@@ -53,6 +53,23 @@ st.set_page_config(
     layout="wide"
 )
 
+# Desativa o aviso de tradução do Chrome/Safari e força pt-BR no documento principal
+st.markdown("""
+    <script>
+        var doc = window.parent.document.documentElement;
+        doc.setAttribute('lang', 'pt-BR');
+        
+        // Adiciona a meta tag 'notranslate' diretamente no <head> da janela principal
+        var head = window.parent.document.getElementsByTagName('head')[0];
+        if (!window.parent.document.querySelector('meta[name="google"]')) {
+            var meta = window.parent.document.createElement('meta');
+            meta.name = 'google';
+            meta.content = 'notranslate';
+            head.appendChild(meta);
+        }
+    </script>
+""", unsafe_allow_html=True)
+
 # Define o idioma do documento HTML como pt-BR para navegadores e celulares
 st.markdown(
     """
