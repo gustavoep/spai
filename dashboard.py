@@ -605,16 +605,16 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 # PAINEL 1: VISÃO GERAL
 # ====================================================
 if painel_selecionado == "Visão Geral":
-    # Exibição dos dois logotipos alinhados na mesma linha (horizontalmente)
-    col_logo1, col_logo2, _ = st.columns([1.2, 1.8, 2])
+    # Exibição dos dois logotipos alinhados na mesma linha com proporções ajustadas
+    col_logo1, col_logo2, _ = st.columns([1.6, 1.4, 2])
 
     with col_logo1:
         if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
-            st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=220)
+            st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=280)  # Logo vertical maior
 
     with col_logo2:
         if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
-            st.image(CAMINHO_LOGO_HORIZONTAL, width=320)
+            st.image(CAMINHO_LOGO_HORIZONTAL, width=230)  # Logo horizontal menor
 
     if not os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL) and not os.path.exists(CAMINHO_LOGO_HORIZONTAL):
         st.title("Visão Geral dos Ambientes de Inovação")
