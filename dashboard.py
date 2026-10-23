@@ -335,6 +335,10 @@ for _, r in df_spai.iterrows():
 if os.path.exists(CAMINHO_CTI):
     st.sidebar.image(CAMINHO_CTI, width='stretch')
 
+# Logo Horizontal do SPAI (posicionado abaixo do logo do CTI)
+if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
+    st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
+
 painel_selecionado = st.sidebar.radio(
     "Navegação por Painel:",
     ["Visão Geral", "Verticais Tecnológicas", "Segmentos de Mercado"],
@@ -605,18 +609,10 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 # PAINEL 1: VISÃO GERAL
 # ====================================================
 if painel_selecionado == "Visão Geral":
-    # Distribuição de colunas com largura suficiente para evitar cortes nos logotipos
-    col_logo1, col_logo2, _ = st.columns([2.5, 2.5, 1])
-
-    with col_logo1:
-        if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
-            st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=350)  # Logo Vertical expandido
-
-    with col_logo2:
-        if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
-            st.image(CAMINHO_LOGO_HORIZONTAL, width=280)  # Logo Horizontal sem cortes
-
-    if not os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL) and not os.path.exists(CAMINHO_LOGO_HORIZONTAL):
+    # Exibição do Logo SPAI Vertical no tamanho máximo
+    if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
+        st.image(CAMINHO_LOGO_SPAI_VERTICAL, width='stretch')
+    else:
         st.title("Visão Geral dos Ambientes de Inovação")
         st.caption("Sistema Paulista de Ambientes de Inovação — Secretaria de Ciência, Tecnologia e Inovação de SP")
 
