@@ -10,6 +10,7 @@ CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_CTI = "assets/CTI.png"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
+CAMINHO_LOGO_SPAI = "assets/SPAI.png"
 CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 
 # Fuso horário oficial de Brasília (UTC-3)
@@ -337,6 +338,10 @@ if os.path.exists(CAMINHO_CTI):
 # Logo Horizontal do SPAI
 if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
     st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
+
+# Logo do SPAI (posicionado abaixo do Logotipo Horizontal)
+if os.path.exists(CAMINHO_LOGO_SPAI):
+    st.sidebar.image(CAMINHO_LOGO_SPAI, width='stretch')
 
 painel_selecionado = st.sidebar.radio(
     "Navegação por Painel:",
