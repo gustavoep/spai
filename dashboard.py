@@ -10,7 +10,7 @@ CAMINHO_SEGMENTOS = "data/Fato_Segmentos.xlsx"
 CAMINHO_VERTICAIS = "data/Fato_Verticais.xlsx"
 CAMINHO_CTI = "assets/CTI.png"
 CAMINHO_LOGO_HORIZONTAL = "assets/Logotipo Horizontal SPAI.png"
-CAMINHO_LOGO_SPAI = "assets/SPAI.png"
+CAMINHO_LOGO_SPAI_VERTICAL = "assets/SPAI_Vertical.png"
 CAMINHO_LOGO_JAPI = "assets/Logo_JAPI.png"
 
 # Fuso horário oficial de Brasília (UTC-3)
@@ -339,10 +339,6 @@ if os.path.exists(CAMINHO_CTI):
 if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
     st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
 
-# Logo do SPAI (posicionado abaixo do Logotipo Horizontal)
-if os.path.exists(CAMINHO_LOGO_SPAI):
-    st.sidebar.image(CAMINHO_LOGO_SPAI, width='stretch')
-
 painel_selecionado = st.sidebar.radio(
     "Navegação por Painel:",
     ["Visão Geral", "Verticais Tecnológicas", "Segmentos de Mercado"],
@@ -582,7 +578,7 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique na barra novamente para limpar)*")
                 df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
         else:
-            st.subheader(f"📋 Relação Completa de Ambientes")
+            st.subheader("📋 Relação Completa de Ambientes")
 
         # Mantém apenas os ambientes únicos filtrados
         df_grouped = df_table_source[["SPAI_ID", col_nome]].drop_duplicates()
@@ -613,8 +609,13 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 # PAINEL 1: VISÃO GERAL
 # ====================================================
 if painel_selecionado == "Visão Geral":
-    st.title("Visão Geral dos Ambientes de Inovação")
-    st.caption("Sistema Paulista de Ambientes de Inovação — Secretaria de Ciência, Tecnologia e Inovação de SP")
+    # Substituição das caixas de texto pelo Logotipo SPAI Vertical na melhor resolução possível
+    if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
+        st.image(CAMINHO_LOGO_SPAI_VERTICAL, width=320)
+    else:
+        st.title("Visão Geral dos Ambientes de Inovação")
+        st.caption("Sistema Paulista de Ambientes de Inovação — Secretaria de Ciência, Tecnologia e Inovação de SP")
+    
     st.write("")
 
     total_membros = len(df_spai)
