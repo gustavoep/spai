@@ -53,13 +53,12 @@ st.set_page_config(
     layout="wide"
 )
 
-# Desativa o aviso de tradução do Chrome/Safari e força pt-BR no documento principal
+# Configuração para desativar aviso de tradução e definir o idioma como pt-BR
 st.markdown("""
     <script>
         var doc = window.parent.document.documentElement;
         doc.setAttribute('lang', 'pt-BR');
         
-        // Adiciona a meta tag 'notranslate' diretamente no <head> da janela principal
         var head = window.parent.document.getElementsByTagName('head')[0];
         if (!window.parent.document.querySelector('meta[name="google"]')) {
             var meta = window.parent.document.createElement('meta');
@@ -69,16 +68,6 @@ st.markdown("""
         }
     </script>
 """, unsafe_allow_html=True)
-
-# Define o idioma do documento HTML como pt-BR para navegadores e celulares
-st.markdown(
-    """
-    <script>
-        document.documentElement.setAttribute('lang', 'pt-BR');
-    </script>
-    """,
-    unsafe_allow_html=True
-)
 
 # URL ao vivo da planilha do Google Sheets (Base Geral SPAI)
 GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1yXVrdrAZW9QCYHIfp2MsyIa2iFsVAhGZYxnOst_UG_M/export?format=csv&gid=1170767452"
@@ -373,6 +362,10 @@ painel_selecionado = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
+
+# Link para o Mapeamento 2025
+st.sidebar.markdown("📄 [**Acesse o Mapeamento de Ambientes de Inovação de São Paulo Ano-Base 2025**](https://drive.google.com/file/d/1cKcB8jkSQFSbfMoMK-bQAOCEo_NPZiX_/view?usp=sharing)")
+
 st.sidebar.info("""
 **Sistema Paulista de Ambientes de Inovação (SPAI)**
 
