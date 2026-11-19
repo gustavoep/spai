@@ -27,6 +27,51 @@ def normalizar_texto(txt):
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
+# Formata percentual no padrão brasileiro (ex: 31,5% ou 12%)
+def formatar_percentual_ptbr(valor):
+    arredondado = round(float(valor), 1)
+    if arredondado == int(arredondado):
+        return f"{int(arredondado)}%"
+    return f"{arredondado:.1f}%".replace(".", ",")
+
+# Retorna ícone SVG minimalista de acordo com o tema da Vertical ou Segmento
+def obter_icone_svg(categoria, cor="#005f73", tamanho=26):
+    cat_norm = normalizar_texto(categoria)
+    props = f'width="{tamanho}" height="{tamanho}" viewBox="0 0 24 24" fill="none" stroke="{cor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+
+    if cat_norm == "outros":
+        return f'<svg {props}><circle cx="12" cy="12" r="1.5" fill="{cor}"/><circle cx="19" cy="12" r="1.5" fill="{cor}"/><circle cx="5" cy="12" r="1.5" fill="{cor}"/></svg>'
+    if any(k in cat_norm for k in ["saude", "vida", "bem-estar", "bem estar", "medic", "farma", "hospital"]):
+        return f'<svg {props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>'
+    if any(k in cat_norm for k in ["agro", "aliment", "bioeconomia", "rural", "agric", "florest"]):
+        return f'<svg {props}><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>'
+    if any(k in cat_norm for k in ["industr", "manufatura", "materiais", "quimic", "metal", "mecan"]):
+        return f'<svg {props}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></svg>'
+    if any(k in cat_norm for k in ["energia", "clima", "sustentab", "ambient", "solar", "limpa", "verde"]):
+        return f'<svg {props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>'
+    if any(k in cat_norm for k in ["educa", "ciencia", "publico", "ensino", "governo", "social"]):
+        return f'<svg {props}><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>'
+    if any(k in cat_norm for k in ["inteligencia artificial", "ia ", " ia", "dados", "big data", "computa", "algoritm"]):
+        return f'<svg {props}><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>'
+    if any(k in cat_norm for k in ["tecnologia", "digital", "software", "tic", "sistema", "cloud", "nuvem", "web"]):
+        return f'<svg {props}><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>'
+    if any(k in cat_norm for k in ["infraestrutura", "logistica", "mobilidade", "transport", "cidade", "urbana"]):
+        return f'<svg {props}><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>'
+    if any(k in cat_norm for k in ["defesa", "seguranca", "espaco", "aero", "ciber"]):
+        return f'<svg {props}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>'
+    if any(k in cat_norm for k in ["financ", "seguro", "econom", "fintech", "banco", "credito"]):
+        return f'<svg {props}><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>'
+    if any(k in cat_norm for k in ["biotecnologia", "genet", "biolog", "nano", "atom"]):
+        return f'<svg {props}><circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2.04-2.03.02-7.36-4.5-11.9-4.54-4.52-9.87-6.54-11.9-4.5-2.04 2.03-.02 7.36 4.5 11.9 4.54 4.52 9.87 6.54 11.9 4.5Z"/><path d="M15.7 15.7c4.52-4.54 6.54-9.87 4.5-11.9-2.03-2.04-7.36-.02-11.9 4.5-4.52 4.54-6.54 9.87-4.5 11.9 2.03 2.04 7.36.02 11.9-4.5Z"/></svg>'
+    if any(k in cat_norm for k in ["iot", "internet das coisas", "conectiv", "telecom", "sensor"]):
+        return f'<svg {props}><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></svg>'
+    if any(k in cat_norm for k in ["robot", "automa", "hardware", "eletron"]):
+        return f'<svg {props}><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>'
+    if any(k in cat_norm for k in ["varejo", "comerc", "consumo", "mercado", "negocio"]):
+        return f'<svg {props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>'
+
+    return f'<svg {props}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>'
+
 # Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
 def ordenar_categorias_prioritarias(lista_cats):
     ordem_prioritaria = [
@@ -231,6 +276,120 @@ st.markdown("""
         color: #1e293b;
         line-height: 1.5;
     }
+
+    /* Grade de Cards de Distribuição (Verticais Tecnológicas e Segmentos de Mercado) */
+    .dist-grid-top {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+    .dist-card-top {
+        background: linear-gradient(90deg, #005f73 0%, #0a9396 100%);
+        color: #ffffff;
+        border-radius: 14px;
+        padding: 22px 26px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        box-shadow: 0 4px 14px rgba(0, 95, 115, 0.22);
+    }
+    .dist-card-top-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .dist-card-top-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .dist-card-top-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #ffffff;
+        line-height: 1.3;
+    }
+    .dist-card-top-right {
+        text-align: right;
+        flex-shrink: 0;
+    }
+    .dist-card-top-pct {
+        font-size: 34px;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        letter-spacing: -0.5px;
+    }
+    .dist-card-top-sub {
+        font-size: 11px;
+        font-weight: 600;
+        color: #94d2bd;
+        margin-top: 5px;
+    }
+
+    .dist-grid-sub {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+    .dist-card-sub {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 136px;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .dist-card-sub-hdr {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .dist-card-sub-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #0f172a;
+        line-height: 1.35;
+    }
+    .dist-card-sub-icon {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .dist-card-sub-ftr {
+        margin-top: 16px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .dist-card-sub-pct {
+        font-size: 28px;
+        font-weight: 800;
+        color: #005f73;
+        line-height: 1;
+    }
+    .dist-card-sub-qtd {
+        font-size: 11px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    @media (max-width: 992px) {
+        .dist-grid-top { grid-template-columns: 1fr; }
+        .dist-grid-sub { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 576px) {
+        .dist-grid-sub { grid-template-columns: 1fr; }
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -383,7 +542,7 @@ st.sidebar.markdown("**Colaboradores:**")
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
-# Função para renderização de painel fato com Gráfico de Barras Horizontais (Categorias Originais do SPAI)
+# Função para renderização de painel fato com Grade de Cards (Top 2 + até 8 cards abaixo)
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
     st.caption(f"Mapeamento e distribuição de {item_plural.lower()} nos ambientes de inovação de São Paulo")
@@ -504,104 +663,88 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         st.markdown("---")
 
         # ----------------------------------------------------
-        # GRÁFICO DE BARRAS HORIZONTAIS COM CLASSIFICAÇÃO ORIGINAL E CORES INSTITUCIONAIS
+        # GRADE DE CARDS (TOP 2 EM DESTAQUE + ATÉ 8 CARDS ABAIXO = MÁXIMO 10)
         # ----------------------------------------------------
         st.subheader(f"📊 Distribuição por {titulo_item}")
-        
-        # Opções de Drill-down / Exibição completa
-        col_g1, col_g2 = st.columns([7, 3])
-        with col_g2:
-            exibir_todos = st.checkbox(
-                f"🔍 Mostrar todas ({total_items}) sem agrupar em 'Outros'",
-                value=False,
-                key=f"chk_todos_{titulo_item}"
-            )
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
         df_dist.columns = [titulo_item, "Quantidade de Ambientes"]
-        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False)
+        df_dist = df_dist.sort_values(by="Quantidade de Ambientes", ascending=False).reset_index(drop=True)
 
-        outros_items = []
         if not df_dist.empty:
-            if not exibir_todos and len(df_dist) > 10:
-                top10 = df_dist.iloc[:10].copy()
-                outros_items = df_dist.iloc[10:][titulo_item].tolist()
-                outros_qtd = df_filt_f[df_filt_f[col_atuacao].isin(outros_items)][col_nome].nunique()
+            total_ocorrencias = df_dist["Quantidade de Ambientes"].sum()
+
+            # Garante no máximo 10 cards (agrupando excedentes em "Outros" quando houver > 10)
+            if len(df_dist) > 10:
+                top9 = df_dist.iloc[:9].copy()
+                outros_qtd = df_dist.iloc[9:]["Quantidade de Ambientes"].sum()
                 outros_df = pd.DataFrame([{titulo_item: "Outros", "Quantidade de Ambientes": outros_qtd}])
-                df_chart = pd.concat([top10, outros_df], ignore_index=True)
+                df_cards = pd.concat([top9, outros_df], ignore_index=True)
             else:
-                df_chart = df_dist.copy()
+                df_cards = df_dist.head(10).copy()
 
-            # Plotly Horizontal Bar Chart usando Cores Institucionais
-            fig_bar = px.bar(
-                df_chart,
-                x="Quantidade de Ambientes",
-                y=titulo_item,
-                orientation='h',
-                color="Quantidade de Ambientes",
-                color_continuous_scale=PALETA_SPAI_ESCALA,
-                text="Quantidade de Ambientes"
-            )
+            df_cards["Percentual"] = (df_cards["Quantidade de Ambientes"] / max(total_ocorrencias, 1)) * 100
 
-            # Rótulos externos legíveis e de alto contraste
-            fig_bar.update_traces(
-                textposition='outside',
-                cliponaxis=False,
-                textfont=dict(size=13, color='#0f172a', family='Inter, sans-serif'),
-                hovertemplate="<b>%{y}</b><br>Ambientes Atendidos: <b>%{x}</b><extra></extra>"
-            )
+            top2_df = df_cards.iloc[:2]
+            restante_df = df_cards.iloc[2:10]
 
-            # Ajuste de layout e ordem (maior no topo)
-            max_val = df_chart["Quantidade de Ambientes"].max()
-            fig_bar.update_layout(
-                coloraxis_showscale=False,
-                yaxis=dict(autorange="reversed", title="", tickfont=dict(size=12, color='#0f172a', family='Inter, sans-serif')),
-                xaxis=dict(title="Quantidade de Ambientes Atendidos", range=[0, max_val * 1.15], gridcolor='#f1f5f9'),
-                height=max(420, len(df_chart) * 36),
-                margin=dict(l=10, r=40, t=20, b=20),
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Inter, sans-serif", color="#0f172a")
-            )
+            # Primeira Linha: Top 2 Cards em Destaque
+            html_cards = '<div class="dist-grid-top">'
+            for _, row in top2_df.iterrows():
+                nome_cat = str(row[titulo_item]).strip()
+                qtd_cat = int(row["Quantidade de Ambientes"])
+                pct_str = formatar_percentual_ptbr(row["Percentual"])
+                icone = obter_icone_svg(nome_cat, cor="#ffffff", tamanho=34)
+                lbl_amb = "ambiente" if qtd_cat == 1 else "ambientes"
 
-            bar_event = st.plotly_chart(
-                fig_bar,
-                on_select="rerun",
-                selection_mode="points",
-                key=f"bar_chart_{titulo_item}",
-                width='stretch'
-            )
+                html_cards += (
+                    f'<div class="dist-card-top">'
+                    f'<div class="dist-card-top-left">'
+                    f'<div class="dist-card-top-icon">{icone}</div>'
+                    f'<div class="dist-card-top-title">{nome_cat}</div>'
+                    f'</div>'
+                    f'<div class="dist-card-top-right">'
+                    f'<div class="dist-card-top-pct">{pct_str}</div>'
+                    f'<div class="dist-card-top-sub">{qtd_cat} {lbl_amb}</div>'
+                    f'</div>'
+                    f'</div>'
+                )
+            html_cards += '</div>'
 
-            item_clicado_grafico = None
-            if bar_event and isinstance(bar_event, dict) and "selection" in bar_event:
-                pts = bar_event["selection"].get("points", [])
-                if pts:
-                    p0 = pts[0]
-                    lbl = p0.get("y") or p0.get("label")
-                    if lbl:
-                        item_clicado_grafico = str(lbl).strip()
+            # Linhas Abaixo: Demais Cards (até 8 cards em grade de 4 colunas)
+            if not restante_df.empty:
+                html_cards += '<div class="dist-grid-sub">'
+                for _, row in restante_df.iterrows():
+                    nome_cat = str(row[titulo_item]).strip()
+                    qtd_cat = int(row["Quantidade de Ambientes"])
+                    pct_str = formatar_percentual_ptbr(row["Percentual"])
+                    icone = obter_icone_svg(nome_cat, cor="#005f73", tamanho=24)
+                    lbl_amb = "ambiente" if qtd_cat == 1 else "ambientes"
+
+                    html_cards += (
+                        f'<div class="dist-card-sub">'
+                        f'<div class="dist-card-sub-hdr">'
+                        f'<div class="dist-card-sub-title">{nome_cat}</div>'
+                        f'<div class="dist-card-sub-icon">{icone}</div>'
+                        f'</div>'
+                        f'<div class="dist-card-sub-ftr">'
+                        f'<div class="dist-card-sub-pct">{pct_str}</div>'
+                        f'<div class="dist-card-sub-qtd">{qtd_cat} {lbl_amb}</div>'
+                        f'</div>'
+                        f'</div>'
+                    )
+                html_cards += '</div>'
+
+            st.markdown(html_cards, unsafe_allow_html=True)
 
         st.markdown("---")
 
         # ----------------------------------------------------
-        # TABELA DETALHADA INTERATIVA
+        # TABELA DETALHADA
         # ----------------------------------------------------
-        df_table_source = df_filt_f.copy()
+        st.subheader("📋 Relação Completa de Ambientes")
 
-        if item_clicado_grafico:
-            if item_clicado_grafico == "Outros" and outros_items:
-                st.subheader(f"📋 Relação de Ambientes nas categorias agrupadas em **Outros**")
-                st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo ambientes das menores categorias agrupadas em 'Outros'. *(Clique na barra novamente para limpar)*")
-                df_table_source = df_table_source[df_table_source[col_atuacao].isin(outros_items)]
-            else:
-                st.subheader(f"📋 Relação Completa de Ambientes em **{item_clicado_grafico}**")
-                st.info(f"🎯 **Filtrado pelo Gráfico:** Exibindo os ambientes que atuam em **{item_clicado_grafico}**. *(Clique na barra novamente para limpar)*")
-                df_table_source = df_table_source[df_table_source[col_atuacao].astype(str).str.strip() == item_clicado_grafico]
-        else:
-            st.subheader("📋 Relação Completa de Ambientes")
-
-        # Mantém apenas os ambientes únicos filtrados
-        df_grouped = df_table_source[["SPAI_ID", col_nome]].drop_duplicates()
+        df_grouped = df_filt_f[["SPAI_ID", col_nome]].drop_duplicates()
 
         col_renames = {
             "SPAI_ID": "ID",
