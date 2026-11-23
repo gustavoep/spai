@@ -1,6 +1,3 @@
-A tabela **Relação Completa de Ambientes** foi removida da função `renderizar_painel_fato`, mantendo apenas os filtros, os indicadores superiores (KPIs) e a grade de cards nas abas **Verticais Tecnológicas** e **Segmentos de Mercado**.
-
-```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
