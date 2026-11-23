@@ -1,3 +1,6 @@
+A tabela **Relação Completa de Ambientes** foi removida da função `renderizar_painel_fato`, mantendo apenas os filtros, os indicadores superiores (KPIs) e a grade de cards nas abas **Verticais Tecnológicas** e **Segmentos de Mercado**.
+
+```python
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -736,36 +739,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 html_cards += '</div>'
 
             st.markdown(html_cards, unsafe_allow_html=True)
-
-        st.markdown("---")
-
-        # ----------------------------------------------------
-        # TABELA DETALHADA
-        # ----------------------------------------------------
-        st.subheader("📋 Relação Completa de Ambientes")
-
-        df_grouped = df_filt_f[["SPAI_ID", col_nome]].drop_duplicates()
-
-        col_renames = {
-            "SPAI_ID": "ID",
-            col_nome: "Ambiente de Inovação"
-        }
-
-        df_grouped = df_grouped.rename(columns=col_renames)
-        df_grouped["ID"] = pd.to_numeric(df_grouped["ID"], errors="coerce").fillna(0).astype(int)
-        df_grouped = df_grouped.sort_values(by="Ambiente de Inovação")
-        df_grouped = df_grouped.set_index("ID")
-
-        configs = {
-            "Ambiente de Inovação": st.column_config.TextColumn("Ambiente de Inovação", width="large")
-        }
-
-        st.dataframe(
-            df_grouped,
-            column_config=configs,
-            width='stretch',
-            height=380
-        )
 
 
 # ====================================================
