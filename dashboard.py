@@ -27,7 +27,7 @@ def normalizar_texto(txt):
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
-# Padroniza o rótulo de exibição da categoria (substitui Hub de Inovação por Centros de Conexão)
+# Padroniza o rótulo de exibição da categoria no formato institucional
 def formatar_categoria_exibicao(cat):
     if not isinstance(cat, str):
         cat = str(cat) if pd.notna(cat) else ""
@@ -35,9 +35,17 @@ def formatar_categoria_exibicao(cat):
     if not cat_limpa:
         return ""
     c_norm = normalizar_texto(cat_limpa)
-    if "hub" in c_norm or "centro de conex" in c_norm or "centros de conex" in c_norm:
+    if "parque" in c_norm:
+        return "Parques Tecnológicos"
+    if "incubadora" in c_norm:
+        return "Incubadoras"
+    if "centro de inov" in c_norm or "centros de inov" in c_norm:
+        return "Centros de Inovação"
+    if "hub" in c_norm or "conex" in c_norm:
         return "Centros de Conexão"
-    return cat_limpa.title()
+    if "aceleradora" in c_norm:
+        return "Aceleradoras"
+    return "Outros Formatos"
 
 # Formata percentual no padrão brasileiro (ex: 31,5% ou 12%)
 def formatar_percentual_ptbr(valor):
@@ -84,22 +92,17 @@ def obter_icone_svg(categoria, cor="#005f73", tamanho=26):
 
     return f'<svg {props}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>'
 
-# Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação, Centros de Conexão e Aceleradoras
+# Função para ordenar a lista de categorias na ordem institucional padronizada
 def ordenar_categorias_prioritarias(lista_cats):
-    def prioridade_chave(cat):
-        c_norm = normalizar_texto(cat)
-        if "parque" in c_norm:
-            return 0
-        if "incubadora" in c_norm:
-            return 1
-        if "centro de inovacao" in c_norm or "centros de inovacao" in c_norm:
-            return 2
-        if "centro de conexao" in c_norm or "centros de conexao" in c_norm or "hub" in c_norm:
-            return 3
-        if "aceleradora" in c_norm:
-            return 4
-        return 999
-    return sorted(lista_cats, key=lambda c: (prioridade_chave(c), c))
+    ordem_padrao = {
+        "Parques Tecnológicos": 0,
+        "Incubadoras": 1,
+        "Centros de Inovação": 2,
+        "Centros de Conexão": 3,
+        "Aceleradoras": 4,
+        "Outros Formatos": 5,
+    }
+    return sorted(lista_cats, key=lambda c: (ordem_padrao.get(c, 999), c))
 
 # Configuração da Página
 st.set_page_config(
