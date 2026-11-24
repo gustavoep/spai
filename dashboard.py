@@ -27,6 +27,18 @@ def normalizar_texto(txt):
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
 
+# Padroniza o rótulo de exibição da categoria (substitui Hub de Inovação por Centros de Conexão)
+def formatar_categoria_exibicao(cat):
+    if not isinstance(cat, str):
+        cat = str(cat) if pd.notna(cat) else ""
+    cat_limpa = cat.strip()
+    if not cat_limpa:
+        return ""
+    c_norm = normalizar_texto(cat_limpa)
+    if "hub" in c_norm or "centro de conex" in c_norm or "centros de conex" in c_norm:
+        return "Centros de Conexão"
+    return cat_limpa.title()
+
 # Formata percentual no padrão brasileiro (ex: 31,5% ou 12%)
 def formatar_percentual_ptbr(valor):
     arredondado = round(float(valor), 1)
@@ -72,22 +84,20 @@ def obter_icone_svg(categoria, cor="#005f73", tamanho=26):
 
     return f'<svg {props}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>'
 
-# Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação e Centros de Conexão
+# Função para ordenar a lista de categorias priorizando Parque Tecnológico, Incubadoras, Centros de Inovação, Centros de Conexão e Aceleradoras
 def ordenar_categorias_prioritarias(lista_cats):
-    ordem_prioritaria = [
-        "parque tecnologico", "parques tecnologicos",
-        "incubadora", "incubadoras",
-        "centro de inovacao", "centros de inovacao",
-        "centro de conexao", "centros de conexao"
-    ]
     def prioridade_chave(cat):
         c_norm = normalizar_texto(cat)
-        for item in ordem_prioritaria:
-            if item in c_norm or c_norm in item:
-                if "parque" in item: return 0
-                if "incubadora" in item: return 1
-                if "centro de inovacao" in item or "centros de inovacao" in item: return 2
-                if "centro de conexao" in item or "centros de conexao" in item: return 3
+        if "parque" in c_norm:
+            return 0
+        if "incubadora" in c_norm:
+            return 1
+        if "centro de inovacao" in c_norm or "centros de inovacao" in c_norm:
+            return 2
+        if "centro de conexao" in c_norm or "centros de conexao" in c_norm or "hub" in c_norm:
+            return 3
+        if "aceleradora" in c_norm:
+            return 4
         return 999
     return sorted(lista_cats, key=lambda c: (prioridade_chave(c), c))
 
@@ -515,7 +525,7 @@ for _, r in df_spai.iterrows():
     val_id = pd.to_numeric(r[col_spai_id], errors="coerce")
     MAPA_SPAI_DADOS[key] = {
         "ID": int(val_id) if pd.notna(val_id) else 0,
-        "Categoria": str(r[col_spai_cat]).strip().title() if col_spai_cat and pd.notna(r[col_spai_cat]) else "",
+        "Categoria": formatar_categoria_exibicao(r[col_spai_cat]) if col_spai_cat and pd.notna(r[col_spai_cat]) else "",
         "Regiao": str(r[col_spai_reg]).strip() if col_spai_reg and pd.notna(r[col_spai_reg]) else "",
         "Municipio": str(r[col_spai_mun]).strip() if col_spai_mun and pd.notna(r[col_spai_mun]) else "",
         "Tipo": str(r[col_spai_tipo]).strip().title() if col_spai_tipo and pd.notna(r[col_spai_tipo]) else ""
@@ -846,7 +856,7 @@ if painel_selecionado == "Visão Geral":
         df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
 
     col_b_categorias = df_filt.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
-    cats_formatadas = list(set([c.title() for c in col_b_categorias if c != ""]))
+    cats_formatadas = list(set([formatar_categoria_exibicao(c) for c in col_b_categorias if formatar_categoria_exibicao(c) != ""]))
     cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
     opcoes_categorias = ["Todas"] + cats_ordenadas
 
@@ -864,7 +874,7 @@ if painel_selecionado == "Visão Geral":
         cat_sel = st.selectbox("Categoria:", opcoes_categorias, key="cat_select_vg")
 
     if cat_sel and cat_sel != "Todas":
-        df_filt = df_filt[df_filt.iloc[:, 1].astype(str).str.strip().str.title() == cat_sel]
+        df_filt = df_filt[df_filt.iloc[:, 1].apply(formatar_categoria_exibicao) == cat_sel]
 
     st.write("")
 
@@ -932,7 +942,7 @@ if painel_selecionado == "Visão Geral":
                         
                         nome_env = str(row_sel[col_nome_orig]).strip()
                         id_env = int(pd.to_numeric(row_sel[col_id_orig], errors="coerce") or 0)
-                        cat_env = str(row_sel.iloc[1]).strip().title() if df_filt.shape[1] > 1 else ""
+                        cat_env = formatar_categoria_exibicao(row_sel.iloc[1]) if df_filt.shape[1] > 1 else ""
                         reg_env = str(row_sel.iloc[2]).strip() if df_filt.shape[1] > 2 else ""
                         mun_env = str(row_sel.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
                         tipo_env = str(row_sel.iloc[4]).strip().title() if df_filt.shape[1] > 4 else ""
