@@ -514,6 +514,41 @@ if hasattr(st, "dialog"):
         else:
             st.caption("ℹ️ Segmentos de Mercado: Não mapeados na fase atual.")
 
+# Monta o dicionário de informações do ambiente selecionado (mapa ou tabela)
+def montar_dados_popup(row_sel, col_id_orig, col_nome_orig, num_cols):
+    nome_env = str(row_sel[col_nome_orig]).strip()
+    id_env = int(pd.to_numeric(row_sel[col_id_orig], errors="coerce") or 0)
+    cat_env = formatar_categoria_exibicao(row_sel.iloc[1]) if num_cols > 1 else ""
+    reg_env = str(row_sel.iloc[2]).strip() if num_cols > 2 else ""
+    mun_env = str(row_sel.iloc[3]).strip() if num_cols > 3 else ""
+    tipo_env = str(row_sel.iloc[4]).strip().title() if num_cols > 4 else ""
+
+    v_env, s_env = buscar_detalhes_ambiente(nome_env)
+
+    return {
+        "nome": nome_env,
+        "id": id_env,
+        "categoria": cat_env,
+        "regiao": reg_env,
+        "municipio": mun_env,
+        "tipo": tipo_env,
+        "verticais": v_env,
+        "segmentos": s_env
+    }
+
+# Exibe o modal (ou expander de fallback) com os detalhes do ambiente
+def abrir_detalhes_ambiente(dados_popup):
+    if hasattr(st, "dialog"):
+        exibir_popup_ambiente(dados_popup)
+    else:
+        with st.expander(f"📍 Detalhes de {dados_popup['nome']}", expanded=True):
+            st.write(f"**ID SPAI:** `{dados_popup['id']}` | **Categoria:** {dados_popup['categoria']} | **Tipo:** {dados_popup['tipo']}")
+            st.write(f"**Município:** {dados_popup['municipio']} | **Região:** {dados_popup['regiao']}")
+            if dados_popup["verticais"]:
+                st.write("**Verticais:** " + ", ".join(dados_popup["verticais"]))
+            if dados_popup["segmentos"]:
+                st.write("**Segmentos:** " + ", ".join(dados_popup["segmentos"]))
+
 # Mapeamento mestre de dados do SPAI pelo Nome do Ambiente
 col_spai_id = df_spai.columns[0]
 col_spai_cat = df_spai.columns[1] if df_spai.shape[1] > 1 else None
@@ -900,11 +935,14 @@ if painel_selecionado == "Visão Geral":
     col_id_orig = df_filt.columns[0]
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
+    map_event = None
+    df_m = pd.DataFrame()
+
     with col_m:
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
         df_m["Lon"] = pd.to_numeric(df_m["Lon"], errors="coerce")
-        df_m = df_m.dropna(subset=["Lat", "Lon"])
+        df_m = df_m.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
 
         if not df_m.empty:
             hover_dict = {"Lat": False, "Lon": False}
@@ -935,61 +973,76 @@ if painel_selecionado == "Visão Geral":
                 selection_mode="points",
                 width='stretch'
             )
-
-            if map_event and isinstance(map_event, dict) and "selection" in map_event:
-                pts = map_event["selection"].get("points", [])
-                if pts:
-                    idx_ponto = pts[0].get("point_index")
-                    if idx_ponto is not None and idx_ponto < len(df_m):
-                        row_sel = df_m.iloc[idx_ponto]
-                        
-                        nome_env = str(row_sel[col_nome_orig]).strip()
-                        id_env = int(pd.to_numeric(row_sel[col_id_orig], errors="coerce") or 0)
-                        cat_env = formatar_categoria_exibicao(row_sel.iloc[1]) if df_filt.shape[1] > 1 else ""
-                        reg_env = str(row_sel.iloc[2]).strip() if df_filt.shape[1] > 2 else ""
-                        mun_env = str(row_sel.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
-                        tipo_env = str(row_sel.iloc[4]).strip().title() if df_filt.shape[1] > 4 else ""
-                        
-                        v_env, s_env = buscar_detalhes_ambiente(nome_env)
-                        
-                        dados_popup = {
-                            "nome": nome_env,
-                            "id": id_env,
-                            "categoria": cat_env,
-                            "regiao": reg_env,
-                            "municipio": mun_env,
-                            "tipo": tipo_env,
-                            "verticais": v_env,
-                            "segmentos": s_env
-                        }
-                        
-                        if hasattr(st, "dialog"):
-                            exibir_popup_ambiente(dados_popup)
-                        else:
-                            with st.expander(f"📍 Detalhes de {nome_env}", expanded=True):
-                                st.write(f"**ID SPAI:** `{id_env}` | **Categoria:** {cat_env} | **Tipo:** {tipo_env}")
-                                st.write(f"**Município:** {mun_env} | **Região:** {reg_env}")
-                                if v_env: st.write("**Verticais:** " + ", ".join(v_env))
-                                if s_env: st.write("**Segmentos:** " + ", ".join(s_env))
         else:
             st.warning("⚠️ Não há coordenadas geográficas válidas para exibir no mapa com os filtros selecionados.")
 
     with col_l:
-        st.markdown("<h4 style='text-align: center;'>Nome do Ambiente</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; margin-bottom: 2px;'>Nome do Ambiente</h4>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; font-size: 12px; color: #475569; margin-top: 0;'>Clique em um ambiente para ver os detalhes</p>", unsafe_allow_html=True)
 
-        df_exibicao = df_filt[[col_id_orig, col_nome_orig]].copy()
+        df_filt_reset = df_filt.reset_index(drop=True)
+        df_exibicao = df_filt_reset[[col_id_orig, col_nome_orig]].copy()
         df_exibicao.columns = ["ID", "Nome do Ambiente"]
         df_exibicao["ID"] = pd.to_numeric(df_exibicao["ID"], errors="coerce").fillna(0).astype(int)
         df_exibicao = df_exibicao.set_index("ID")
 
-        st.dataframe(
+        table_event = st.dataframe(
             df_exibicao,
             column_config={
                 "Nome do Ambiente": st.column_config.TextColumn("Nome do Ambiente", width="large")
             },
+            on_select="rerun",
+            selection_mode="single-row",
             width='stretch',
             height=430
         )
+
+    # ----------------------------------------------------
+    # ABERTURA DO POPUP (CLIQUE NO MAPA OU NA LISTA)
+    # ----------------------------------------------------
+    pontos_mapa = []
+    if map_event and isinstance(map_event, dict) and "selection" in map_event:
+        pontos_mapa = map_event["selection"].get("points", [])
+
+    linhas_tabela = []
+    if table_event and isinstance(table_event, dict) and "selection" in table_event:
+        linhas_tabela = table_event["selection"].get("rows", [])
+
+    if "ultimo_ponto_mapa" not in st.session_state:
+        st.session_state["ultimo_ponto_mapa"] = []
+    if "ultima_linha_tabela" not in st.session_state:
+        st.session_state["ultima_linha_tabela"] = []
+
+    dados_popup_selecionado = None
+
+    # Verifica se houve novo clique na lista de nomes dos ambientes
+    if linhas_tabela != st.session_state["ultima_linha_tabela"]:
+        st.session_state["ultima_linha_tabela"] = list(linhas_tabela)
+        if linhas_tabela:
+            idx_linha = linhas_tabela[0]
+            if idx_linha is not None and 0 <= idx_linha < len(df_filt_reset):
+                dados_popup_selecionado = montar_dados_popup(
+                    df_filt_reset.iloc[idx_linha],
+                    col_id_orig,
+                    col_nome_orig,
+                    df_filt_reset.shape[1]
+                )
+
+    # Verifica se houve novo clique em marcador do mapa
+    if pontos_mapa != st.session_state["ultimo_ponto_mapa"]:
+        st.session_state["ultimo_ponto_mapa"] = list(pontos_mapa)
+        if pontos_mapa and not df_m.empty:
+            idx_ponto = pontos_mapa[0].get("point_index")
+            if idx_ponto is not None and 0 <= idx_ponto < len(df_m):
+                dados_popup_selecionado = montar_dados_popup(
+                    df_m.iloc[idx_ponto],
+                    col_id_orig,
+                    col_nome_orig,
+                    df_filt.shape[1]
+                )
+
+    if dados_popup_selecionado is not None:
+        abrir_detalhes_ambiente(dados_popup_selecionado)
 
 # ====================================================
 # PAINEL 2: VERTICAIS TECNOLÓGICAS
