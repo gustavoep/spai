@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import os
 import unicodedata
+from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
 
 # Caminhos exatos no GitHub / Repositório
@@ -127,8 +128,13 @@ st.markdown("""
     </script>
 """, unsafe_allow_html=True)
 
-# URL ao vivo da planilha do Google Sheets (Base Geral SPAI)
-GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1yXVrdrAZW9QCYHIfp2MsyIa2iFsVAhGZYxnOst_UG_M/export?format=csv&gid=1170767452"
+# URL ao vivo da planilha do Google Sheets — aba 'Membros SPAI'
+SHEET_ID = "1yXVrdrAZW9QCYHIfp2MsyIa2iFsVAhGZYxnOst_UG_M"
+ABA_PLANILHA = "Membros SPAI"
+GOOGLE_SHEET_CSV_URL = (
+    f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq"
+    f"?tqx=out:csv&headers=1&sheet={quote(ABA_PLANILHA)}"
+)
 
 # Mapeamento de Coordenadas dos Municípios Paulistas
 COORDENADAS_SP = {
