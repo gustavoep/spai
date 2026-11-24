@@ -393,11 +393,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Função de carregamento com cache da Base Geral
+# Função de carregamento com cache da Base Geral (somente ambientes com dados completos)
 @st.cache_data(ttl=120)
 def carregar_base_geral():
     df = pd.read_csv(GOOGLE_SHEET_CSV_URL)
-    cidade_col = df.iloc[:, 3].astype(str).str.strip() if df.shape[1] > 3 else pd.Series()
+
+    # Considera apenas linhas com dados completos nas 6 colunas principais
+    # (ID, Categoria, Região Administrativa, Município, Tipo, Nome do Ambiente)
+    qtd_cols_obrigatorias = min(6, df.shape[1])
+    cols_obrigatorias = list(df.columns[:qtd_cols_obrigatorias])
+
+    df = df.dropna(subset=cols_obrigatorias).copy()
+
+    valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
+    for col in cols_obrigatorias:
+        serie_limpa = df[col].astype(str).str.strip()
+        df = df[~serie_limpa.str.lower().isin(valores_invalidos)]
+
+    if df.shape[1] > 0:
+        ids_numericos = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+        df = df[ids_numericos.notna()].copy()
+
+    df = df.reset_index(drop=True)
+
+    cidade_col = df.iloc[:, 3].astype(str).str.strip() if df.shape[1] > 3 else pd.Series(dtype=str)
     df["CIDADE_CLEAN"] = cidade_col
     df["Lat"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[0])
     df["Lon"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[1])
