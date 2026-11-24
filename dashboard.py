@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import os
 import unicodedata
 from datetime import datetime, timezone, timedelta
@@ -27,31 +26,6 @@ def normalizar_texto(txt):
     txt = txt.strip().lower()
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
-
-# Retorna cor institucional sóbria e forma geométrica por categoria de ambiente
-def obter_estilo_categoria_mapa(categoria):
-    c_norm = normalizar_texto(categoria)
-    if "parque" in c_norm:
-        return {"cor": "#1B365D", "simbolo": "●", "forma": "circle"}
-    if "incubadora" in c_norm:
-        return {"cor": "#2E7D7B", "simbolo": "◆", "forma": "diamond"}
-    if "centro de inov" in c_norm:
-        return {"cor": "#C86D1F", "simbolo": "■", "forma": "square"}
-    if "centro de conex" in c_norm or "hub" in c_norm:
-        return {"cor": "#4A6FA5", "simbolo": "▲", "forma": "triangle"}
-    return {"cor": "#64748B", "simbolo": "●", "forma": "dot"}
-
-# Gera o ícone SVG geométrico da legenda
-def gerar_svg_forma_legenda(forma, cor):
-    if forma == "circle":
-        return f'<svg width="11" height="11" viewBox="0 0 12 12" style="flex-shrink:0;"><circle cx="6" cy="6" r="5" fill="{cor}"/></svg>'
-    if forma == "diamond":
-        return f'<svg width="11" height="11" viewBox="0 0 12 12" style="flex-shrink:0;"><polygon points="6,1 11,6 6,11 1,6" fill="{cor}"/></svg>'
-    if forma == "square":
-        return f'<svg width="11" height="11" viewBox="0 0 12 12" style="flex-shrink:0;"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill="{cor}"/></svg>'
-    if forma == "triangle":
-        return f'<svg width="11" height="11" viewBox="0 0 12 12" style="flex-shrink:0;"><polygon points="6,1.5 11,10.5 1,10.5" fill="{cor}"/></svg>'
-    return f'<svg width="10" height="10" viewBox="0 0 12 12" style="flex-shrink:0;"><circle cx="6" cy="6" r="4.5" fill="{cor}"/></svg>'
 
 # Formata percentual no padrão brasileiro (ex: 31,5% ou 12%)
 def formatar_percentual_ptbr(valor):
@@ -265,68 +239,6 @@ st.markdown("""
         padding: 8px 18px !important;
         border: 1px solid #64748b !important;
         transition: all 0.2s ease-in-out !important;
-    }
-
-    /* Passo 2: Legenda discreta e alinhada em linha única integrada aos botões */
-    .st-key-cat_pills_vg div[data-testid="stPills"] {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        align-items: center !important;
-        gap: 8px !important;
-        padding-bottom: 4px !important;
-    }
-    .st-key-cat_pills_vg div[data-testid="stPills"] button {
-        display: inline-flex !important;
-        align-items: center !important;
-        white-space: nowrap !important;
-        border-radius: 999px !important;
-        font-weight: 600 !important;
-        font-size: 12.5px !important;
-        padding: 6px 14px !important;
-        border: 1px solid #cbd5e1 !important;
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
-    }
-    .st-key-cat_pills_vg div[data-testid="stPills"] button p {
-        display: inline-flex !important;
-        align-items: center !important;
-        margin: 0 !important;
-    }
-    .st-key-cat_pills_vg div[data-testid="stPills"] button:hover {
-        border-color: #94a3b8 !important;
-        background-color: #f8fafc !important;
-    }
-    .st-key-cat_pills_vg div[data-testid="stPills"] button[aria-pressed="true"],
-    .st-key-cat_pills_vg div[data-testid="stPills"] button[kind="pillsActive"] {
-        background-color: #f1f5f9 !important;
-        border: 1.5px solid #1B365D !important;
-        color: #0f172a !important;
-        font-weight: 700 !important;
-        box-shadow: 0 1px 4px rgba(27, 54, 93, 0.14) !important;
-    }
-
-    /* Barra de Legenda Discreta do Mapa */
-    .mapa-legenda-bar {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 8px 14px;
-        margin-bottom: 10px;
-    }
-    .mapa-legenda-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #1e293b;
-        white-space: nowrap;
     }
 
     .metric-card {
@@ -919,48 +831,6 @@ if painel_selecionado == "Visão Geral":
     cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
     opcoes_categorias = ["Todas"] + cats_ordenadas
 
-    # Injeta forma geométrica colorida (●, ◆, ■, ▲) ao lado do texto de cada botão do Passo 2
-    css_legenda_pills = ["<style>"]
-    for idx, opcao in enumerate(opcoes_categorias, start=1):
-        if opcao == "Todas":
-            continue
-        estilo_cat = obter_estilo_categoria_mapa(opcao)
-        cor_forma = estilo_cat["cor"]
-        forma = estilo_cat["forma"]
-
-        if forma == "circle":
-            regra_forma = (
-                f'content: "" !important; display: inline-block !important; width: 9px; height: 9px; min-width: 9px;'
-                f'border-radius: 50%; background-color: {cor_forma}; margin-right: 7px; flex-shrink: 0;'
-            )
-        elif forma == "diamond":
-            regra_forma = (
-                f'content: "" !important; display: inline-block !important; width: 8px; height: 8px; min-width: 8px;'
-                f'border-radius: 1px; transform: rotate(45deg); background-color: {cor_forma}; margin-right: 8px; flex-shrink: 0;'
-            )
-        elif forma == "square":
-            regra_forma = (
-                f'content: "" !important; display: inline-block !important; width: 9px; height: 9px; min-width: 9px;'
-                f'border-radius: 1.5px; background-color: {cor_forma}; margin-right: 7px; flex-shrink: 0;'
-            )
-        elif forma == "triangle":
-            regra_forma = (
-                f'content: "" !important; display: inline-block !important; width: 10px; height: 9px; min-width: 10px;'
-                f'clip-path: polygon(50% 0%, 0% 100%, 100% 100%); background-color: {cor_forma}; margin-right: 7px; flex-shrink: 0;'
-            )
-        else:
-            regra_forma = (
-                f'content: "" !important; display: inline-block !important; width: 8px; height: 8px; min-width: 8px;'
-                f'border-radius: 50%; background-color: {cor_forma}; margin-right: 7px; flex-shrink: 0;'
-            )
-
-        css_legenda_pills.append(
-            f'.st-key-cat_pills_vg div[data-testid="stPills"] button:nth-child({idx}) p::before, '
-            f'.st-key-cat_pills_vg div[data-testid="stPills"] > div > div:nth-child({idx}) button p::before {{ {regra_forma} }}'
-        )
-    css_legenda_pills.append("</style>")
-    st.markdown("\n".join(css_legenda_pills), unsafe_allow_html=True)
-
     st.write("")
     st.markdown("**📂 PASSO 2: Categoria / Formato do Ambiente:**")
     if hasattr(st, "pills"):
@@ -999,91 +869,33 @@ if painel_selecionado == "Visão Geral":
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
     with col_m:
-        # Legenda horizontal discreta com ícones geométricos alinhada acima do mapa
-        itens_legenda_html = ['<div class="mapa-legenda-bar">']
-        for cat_leg in cats_ordenadas:
-            est_leg = obter_estilo_categoria_mapa(cat_leg)
-            svg_leg = gerar_svg_forma_legenda(est_leg["forma"], est_leg["cor"])
-            itens_legenda_html.append(f'<span class="mapa-legenda-item">{svg_leg}<span>{cat_leg}</span></span>')
-        itens_legenda_html.append('</div>')
-        st.markdown("".join(itens_legenda_html), unsafe_allow_html=True)
-
         df_m = df_filt.dropna(subset=["Lat", "Lon"]).copy()
         df_m["Lat"] = pd.to_numeric(df_m["Lat"], errors="coerce")
         df_m["Lon"] = pd.to_numeric(df_m["Lon"], errors="coerce")
-        df_m = df_m.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
+        df_m = df_m.dropna(subset=["Lat", "Lon"])
 
         if not df_m.empty:
-            cores_pontos = []
-            customdata_rows = []
+            hover_dict = {"Lat": False, "Lon": False}
+            labels_dict = {}
+            if df_filt.shape[1] > 0: hover_dict[df_filt.columns[0]] = True; labels_dict[df_filt.columns[0]] = "ID"
+            if df_filt.shape[1] > 1: hover_dict[df_filt.columns[1]] = True; labels_dict[df_filt.columns[1]] = "Categoria"
+            if df_filt.shape[1] > 2: hover_dict[df_filt.columns[2]] = True; labels_dict[df_filt.columns[2]] = "Região Administrativa"
+            if df_filt.shape[1] > 3: hover_dict[df_filt.columns[3]] = True; labels_dict[df_filt.columns[3]] = "Município"
+            if df_filt.shape[1] > 4: hover_dict[df_filt.columns[4]] = True; labels_dict[df_filt.columns[4]] = "Tipo"
 
-            for _, r_m in df_m.iterrows():
-                val_id_m = str(r_m.iloc[0]).strip() if df_m.shape[1] > 0 else ""
-                val_cat_m = str(r_m.iloc[1]).strip().title() if df_m.shape[1] > 1 else ""
-                val_reg_m = str(r_m.iloc[2]).strip() if df_m.shape[1] > 2 else ""
-                val_mun_m = str(r_m.iloc[3]).strip() if df_m.shape[1] > 3 else ""
-                val_tipo_m = str(r_m.iloc[4]).strip().title() if df_m.shape[1] > 4 else ""
-
-                estilo_m = obter_estilo_categoria_mapa(val_cat_m)
-                cores_pontos.append(estilo_m["cor"])
-                customdata_rows.append([
-                    val_id_m,
-                    f"{estilo_m['simbolo']} {val_cat_m}" if val_cat_m else "",
-                    val_reg_m,
-                    val_mun_m,
-                    val_tipo_m
-                ])
-
-            fig = go.Figure()
-
-            # Camada de contorno branco fino (1px ao redor do marcador de 9px)
-            fig.add_trace(go.Scattermap(
-                lat=df_m["Lat"],
-                lon=df_m["Lon"],
-                mode="markers",
-                marker=dict(
-                    size=11,
-                    color="#FFFFFF",
-                    opacity=0.92
-                ),
-                hoverinfo="skip",
-                showlegend=False
-            ))
-
-            # Marcadores minimalistas (9px, paleta institucional sóbria, 88% de opacidade)
-            fig.add_trace(go.Scattermap(
-                lat=df_m["Lat"],
-                lon=df_m["Lon"],
-                mode="markers",
-                marker=dict(
-                    size=9,
-                    color=cores_pontos,
-                    opacity=0.88
-                ),
-                text=df_m[col_nome_orig].astype(str).str.strip(),
-                customdata=customdata_rows,
-                hovertemplate=(
-                    "<b>%{text}</b><br>"
-                    "ID: %{customdata[0]}<br>"
-                    "Categoria: %{customdata[1]}<br>"
-                    "Região Administrativa: %{customdata[2]}<br>"
-                    "Município: %{customdata[3]}<br>"
-                    "Tipo: %{customdata[4]}"
-                    "<extra></extra>"
-                ),
-                showlegend=False
-            ))
-
-            fig.update_layout(
-                map=dict(
-                    style="carto-positron",
-                    zoom=6.1,
-                    center=dict(lat=-22.3, lon=-48.8)
-                ),
-                margin=dict(r=0, t=0, l=0, b=0),
-                height=450,
-                showlegend=False
+            fig = px.scatter_map(
+                df_m, lat="Lat", lon="Lon",
+                hover_name=col_nome_orig,
+                hover_data=hover_dict,
+                labels=labels_dict,
+                zoom=6.1, center={"lat": -22.3, "lon": -48.8},
+                height=480
             )
+            fig.update_layout(
+                map_style="carto-positron",
+                margin={"r":0, "t":0, "l":0, "b":0}
+            )
+            fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
 
             map_event = st.plotly_chart(
                 fig,
@@ -1144,7 +956,7 @@ if painel_selecionado == "Visão Geral":
                 "Nome do Ambiente": st.column_config.TextColumn("Nome do Ambiente", width="large")
             },
             width='stretch',
-            height=450
+            height=430
         )
 
 # ====================================================
