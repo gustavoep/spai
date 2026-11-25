@@ -418,7 +418,7 @@ def carregar_base_geral():
     df = pd.read_csv(GOOGLE_SHEET_CSV_URL)
 
     # Considera apenas linhas com dados completos nas 6 colunas principais
-    # (ID, Categoria, Região Administrativa, Município, Tipo, Nome do Ambiente)
+    # (ID, Categoria, Região Administrativa, Município/Cidades, Tipo, Nome do Ambiente)
     qtd_cols_obrigatorias = min(6, df.shape[1])
     cols_obrigatorias = list(df.columns[:qtd_cols_obrigatorias])
 
@@ -435,7 +435,16 @@ def carregar_base_geral():
 
     df = df.reset_index(drop=True)
 
-    cidade_col = df.iloc[:, 3].astype(str).str.strip() if df.shape[1] > 3 else pd.Series(dtype=str)
+    # Identifica explicitamente a coluna "Cidades" (ou fallback para a 4ª coluna)
+    col_cidades = None
+    for c in df.columns:
+        if normalizar_texto(c) in {"cidades", "cidade", "municipios", "municipio"}:
+            col_cidades = c
+            break
+    if col_cidades is None and df.shape[1] > 3:
+        col_cidades = df.columns[3]
+
+    cidade_col = df[col_cidades].astype(str).str.strip() if col_cidades is not None else pd.Series(dtype=str)
     df["CIDADE_CLEAN"] = cidade_col
     df["Lat"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[0])
     df["Lon"] = df["CIDADE_CLEAN"].map(lambda c: COORDENADAS_SP.get(c, (None, None))[1])
@@ -833,6 +842,19 @@ if painel_selecionado == "Visão Geral":
     else:
         plenos, associados = 0, 0
 
+    # Contagem distinta de municípios com base na coluna 'Cidades'
+    col_cidades_vg = None
+    for c in df_spai.columns:
+        if normalizar_texto(c) in {"cidades", "cidade", "municipios", "municipio"}:
+            col_cidades_vg = c
+            break
+    if col_cidades_vg is not None:
+        municipios_count = df_spai[col_cidades_vg].dropna().astype(str).str.strip().nunique()
+    elif df_spai.shape[1] > 3:
+        municipios_count = df_spai.iloc[:, 3].dropna().astype(str).str.strip().nunique()
+    else:
+        municipios_count = 0
+
     regioes_count = df_spai.iloc[:, 2].dropna().astype(str).str.strip().nunique() if df_spai.shape[1] > 2 else 0
 
     if df_spai.shape[1] > 1:
@@ -847,7 +869,7 @@ if painel_selecionado == "Visão Geral":
     else:
         parques = incubadoras = centros = centros_conexao = aceleradoras = outros = 0
 
-    top1, top2, top3, top4 = st.columns(4)
+    top1, top2, top3, top4, top5 = st.columns(5)
     top1.markdown(f'''
         <div class="kpi-box-membros">
             <div class="kpi-val-membros">{total_membros}</div>
@@ -856,7 +878,8 @@ if painel_selecionado == "Visão Geral":
     ''', unsafe_allow_html=True)
     top2.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{plenos}</div><div class="kpi-lbl-top">Membros Plenos</div></div>', unsafe_allow_html=True)
     top3.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{associados}</div><div class="kpi-lbl-top">Membros Associados</div></div>', unsafe_allow_html=True)
-    top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
+    top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{municipios_count}</div><div class="kpi-lbl-top">Municípios</div></div>', unsafe_allow_html=True)
+    top5.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
 
     st.write("")
 
