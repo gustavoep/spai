@@ -3,7 +3,9 @@ import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import os
+import re
 import json
+import html
 import unicodedata
 from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
@@ -312,7 +314,7 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-top: 5px solid #005f73;
         border-radius: 12px;
-        padding: 18px 20px;
+        padding: 16px 18px;
         box-shadow: -6px 8px 24px rgba(15, 23, 42, 0.14);
         margin-bottom: 10px;
     }
@@ -340,11 +342,11 @@ st.markdown("""
         border-radius: 999px;
     }
     .drawer-title {
-        font-size: 17px;
+        font-size: 16.5px;
         font-weight: 800;
         color: #0f172a;
         line-height: 1.3;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
     .drawer-section-lbl {
         font-size: 11px;
@@ -356,9 +358,14 @@ st.markdown("""
         margin-bottom: 3px;
     }
     .drawer-value {
-        font-size: 13px;
+        font-size: 12.5px;
         color: #0f172a;
         line-height: 1.45;
+    }
+    .drawer-subvalue {
+        color: #475569;
+        font-size: 11.5px;
+        margin-top: 2px;
     }
     .drawer-actions {
         display: flex;
@@ -371,9 +378,9 @@ st.markdown("""
         background-color: #005f73;
         color: #ffffff !important;
         text-decoration: none !important;
-        font-size: 12.5px;
+        font-size: 12px;
         font-weight: 700;
-        padding: 8px 14px;
+        padding: 8px 13px;
         border-radius: 8px;
     }
     .drawer-btn-primary:hover {
@@ -385,9 +392,9 @@ st.markdown("""
         color: #0f172a !important;
         border: 1px solid #cbd5e1;
         text-decoration: none !important;
-        font-size: 12.5px;
+        font-size: 12px;
         font-weight: 700;
-        padding: 8px 14px;
+        padding: 8px 13px;
         border-radius: 8px;
     }
     .drawer-btn-secondary:hover {
@@ -634,14 +641,19 @@ def buscar_detalhes_ambiente(nome_ambiente):
 
     return verts, segs
 
-# Extrai campos opcionais extras da planilha (Endereço, Site, Contato) se disponíveis
-def extrair_campo_opcional(row, palavras_chave):
+# Extrai campos opcionais extras da planilha (Endereço, Site, E-mail, Telefone)
+def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
     for col in row.index:
         c_norm = normalizar_texto(col)
         if any(p in c_norm for p in palavras_chave):
             val = str(row[col]).strip() if pd.notna(row[col]) else ""
             if val.lower() not in valores_invalidos:
+                if somente_email_ou_fone:
+                    tem_email = "@" in val
+                    tem_fone = bool(re.search(r"\d{4,}", val))
+                    if not (tem_email or tem_fone):
+                        continue
                 return val
     return ""
 
@@ -656,7 +668,7 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
 
     endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
     site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
-    contato_env = extrair_campo_opcional(row_sel, ["contato", "email", "e-mail", "telefone", "responsavel", "gestor"])
+    contato_env = extrair_campo_opcional(row_sel, ["email", "e-mail", "telefone", "fone", "whatsapp", "contato"], somente_email_ou_fone=True)
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -706,29 +718,34 @@ def calcular_enquadramento_mapa(df_pontos, filtro_regional_ativo=False):
 
 # Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, endereço, site e contato
 def renderizar_drawer_detalhes(dados):
-    endereco_txt = dados["endereco"] if dados["endereco"] else f"{dados['municipio']} — RA de {dados['regiao']}, SP"
+    endereco_esc = html.escape(dados["endereco"]) if dados["endereco"] else f"{html.escape(dados['municipio'])} — RA de {html.escape(dados['regiao'])}, SP"
+    regiao_esc = html.escape(dados["regiao"])
+    nome_esc = html.escape(dados["nome"])
+    tipo_esc = html.escape(dados["tipo"])
+    cat_esc = html.escape(dados["categoria"])
 
     # Link de Site (ou busca institucional caso não haja URL na coluna)
-    site_raw = dados["site"]
+    site_raw = dados["site"].strip()
     if site_raw:
         site_url = site_raw if site_raw.startswith(("http://", "https://")) else f"https://{site_raw}"
     else:
         site_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' ' + dados['municipio'])}"
 
     # Link de Contato (mailto se e-mail, tel se telefone, ou pesquisa de contato oficial)
-    contato_raw = dados["contato"]
+    contato_raw = dados["contato"].strip()
     if "@" in contato_raw:
         contato_url = f"mailto:{contato_raw}"
         contato_lbl = "✉️ Entrar em Contato"
     elif contato_raw:
-        contato_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' contato')}"
-        contato_lbl = f"📞 {contato_raw}"
+        digitos_fone = re.sub(r"\D", "", contato_raw)
+        contato_url = f"tel:+55{digitos_fone}" if digitos_fone else f"https://www.google.com/search?q={quote(dados['nome'] + ' contato')}"
+        contato_lbl = f"📞 {html.escape(contato_raw)}"
     else:
         contato_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' ' + dados['municipio'] + ' contato')}"
         contato_lbl = "✉️ Contato Institucional"
 
-    verts_html = ", ".join(dados["verticais"]) if dados["verticais"] else "<i>Não mapeadas na fase atual.</i>"
-    segs_html = ", ".join(dados["segmentos"]) if dados["segmentos"] else "<i>Não mapeados na fase atual.</i>"
+    verts_html = html.escape(", ".join(dados["verticais"])) if dados["verticais"] else "<i>Não mapeadas na fase atual.</i>"
+    segs_html = html.escape(", ".join(dados["segmentos"])) if dados["segmentos"] else "<i>Não mapeados na fase atual.</i>"
 
     c_hdr, c_close = st.columns([5, 1])
     with c_hdr:
@@ -738,30 +755,27 @@ def renderizar_drawer_detalhes(dados):
             st.session_state["ambiente_drawer_selecionado"] = None
             st.rerun()
 
-    html_drawer = f"""
-    <div class="drawer-panel">
-        <div class="drawer-badge-row">
-            <span class="drawer-badge-dark">ID #{dados['id']}</span>
-            <span class="drawer-badge">{dados['tipo']}</span>
-            <span class="drawer-badge">{dados['categoria']}</span>
-        </div>
-        <div class="drawer-title">{dados['nome']}</div>
-
-        <div class="drawer-section-lbl">📍 Endereço / Localização</div>
-        <div class="drawer-value">{endereco_txt}<br><span style="color:#475569; font-size:12px;">Região Administrativa de {dados['regiao']}</span></div>
-
-        <div class="drawer-section-lbl">💻 Verticais Tecnológicas</div>
-        <div class="drawer-value">{verts_html}</div>
-
-        <div class="drawer-section-lbl">🏢 Segmentos de Mercado</div>
-        <div class="drawer-value">{segs_html}</div>
-
-        <div class="drawer-actions">
-            <a href="{site_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-primary">🌐 Visitar Site</a>
-            <a href="{contato_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-secondary">{contato_lbl}</a>
-        </div>
-    </div>
-    """
+    # HTML em linha única sem indentação para evitar que o Markdown do Streamlit o trate como bloco de código
+    html_drawer = (
+        f'<div class="drawer-panel">'
+        f'<div class="drawer-badge-row">'
+        f'<span class="drawer-badge-dark">ID #{dados["id"]}</span>'
+        f'<span class="drawer-badge">{tipo_esc}</span>'
+        f'<span class="drawer-badge">{cat_esc}</span>'
+        f'</div>'
+        f'<div class="drawer-title">{nome_esc}</div>'
+        f'<div class="drawer-section-lbl">📍 Endereço / Localização</div>'
+        f'<div class="drawer-value">{endereco_esc}<div class="drawer-subvalue">Região Administrativa de {regiao_esc}</div></div>'
+        f'<div class="drawer-section-lbl">💻 Verticais Tecnológicas</div>'
+        f'<div class="drawer-value">{verts_html}</div>'
+        f'<div class="drawer-section-lbl">🏢 Segmentos de Mercado</div>'
+        f'<div class="drawer-value">{segs_html}</div>'
+        f'<div class="drawer-actions">'
+        f'<a href="{site_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-primary">🌐 Visitar Site</a>'
+        f'<a href="{contato_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-secondary">{contato_lbl}</a>'
+        f'</div>'
+        f'</div>'
+    )
     st.markdown(html_drawer, unsafe_allow_html=True)
 
 # Mapeamento mestre de dados do SPAI pelo Nome do Ambiente
@@ -1359,8 +1373,9 @@ if painel_selecionado == "Visão Geral":
                     nome_item = str(row_item[col_nome_orig]).strip()
                     mun_item = str(row_item.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
                     rotulo_botao = f"{nome_item}  ·  {mun_item}   ›" if mun_item else f"{nome_item}   ›"
+                    nome_item_esc = html.escape(nome_item, quote=True)
 
-                    st.markdown(f'<div class="env-list-btn" data-env-name="{nome_item}">', unsafe_allow_html=True)
+                    st.markdown(f'<div class="env-list-btn" data-env-name="{nome_item_esc}">', unsafe_allow_html=True)
                     if st.button(rotulo_botao, key=f"env_btn_{idx_row}_{nome_item}", use_container_width=True):
                         st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
                             row_item,
