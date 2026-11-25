@@ -1,7 +1,9 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import plotly.express as px
 import os
+import json
 import unicodedata
 from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
@@ -154,17 +156,17 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste e Elegância)
+# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste, Compactação e Drawer)
 st.markdown("""
     <style>
-    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    .block-container { padding-top: 0.75rem; padding-bottom: 0.5rem; }
 
     /* Card de Destaque Executivo - Total de Membros */
     .kpi-box-membros {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: #ffffff;
         border-radius: 10px;
-        padding: 16px 12px;
+        padding: 12px 10px;
         text-align: center;
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
         border-left: 5px solid #0a9396;
@@ -174,18 +176,18 @@ st.markdown("""
         justify-content: center;
     }
     .kpi-val-membros {
-        font-size: 38px;
+        font-size: 34px;
         font-weight: 800;
         line-height: 1;
         color: #ffffff;
         letter-spacing: -0.5px;
     }
     .kpi-lbl-membros {
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.8px;
-        margin-top: 6px;
+        margin-top: 5px;
         color: #94d2bd;
     }
 
@@ -195,7 +197,7 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-top: 4px solid #005f73;
         border-radius: 10px;
-        padding: 14px 10px;
+        padding: 12px 8px;
         text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         height: 100%;
@@ -203,8 +205,8 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
     }
-    .kpi-val-top { font-size: 32px; font-weight: 800; line-height: 1; color: #005f73; }
-    .kpi-lbl-top { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 6px; color: #1e293b; }
+    .kpi-val-top { font-size: 30px; font-weight: 800; line-height: 1; color: #005f73; }
+    .kpi-lbl-top { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; margin-top: 5px; color: #1e293b; }
 
     /* Cards da Segunda Linha (Categorias) */
     .kpi-box-sec {
@@ -212,7 +214,7 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-top: 3px solid #0a9396;
         border-radius: 8px;
-        padding: 10px 6px;
+        padding: 8px 6px;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         height: 100%;
@@ -220,44 +222,176 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
     }
-    .kpi-val-sec { font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1; }
-    .kpi-lbl-sec { font-size: 10px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
+    .kpi-val-sec { font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1; }
+    .kpi-lbl-sec { font-size: 9.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
     .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 2px; }
 
-    /* Card Destaque - Filtro de Tipo de Membro */
-    .filter-card-tipo {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border: 1px solid #94a3b8;
-        border-left: 6px solid #005f73;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    /* Segmented Control (Nível 1 - Tipo de Membro) com Alto Contraste */
+    div[data-testid="stSegmentedControl"] {
+        background-color: #f1f5f9 !important;
+        padding: 3px !important;
+        border-radius: 9px !important;
+        border: 1px solid #cbd5e1 !important;
     }
-    .filter-card-hdr {
-        font-size: 14px;
-        font-weight: 800;
-        color: #0f172a;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    div[data-testid="stSegmentedControl"] button {
+        border-radius: 7px !important;
+        font-weight: 700 !important;
+        font-size: 12.5px !important;
+        color: #1e293b !important;
+        transition: all 0.15s ease-in-out !important;
     }
-    .filter-card-sub {
-        font-size: 12px;
-        color: #334155;
-        margin-bottom: 10px;
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"],
+    div[data-testid="stSegmentedControl"] button[aria-checked="true"],
+    div[data-testid="stSegmentedControl"] button[data-selected="true"] {
+        background-color: #005f73 !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(0, 95, 115, 0.25) !important;
+    }
+    div[data-testid="stSegmentedControl"] button[aria-pressed="true"] p,
+    div[data-testid="stSegmentedControl"] button[aria-checked="true"] p,
+    div[data-testid="stSegmentedControl"] button[data-selected="true"] p {
+        color: #ffffff !important;
     }
 
+    /* Pills (Nível 2 - Subcategorias) com Contraste Sólido no Estado Ativo */
     div[data-testid="stPills"] button {
-        border-radius: 8px !important;
+        border-radius: 999px !important;
+        font-weight: 600 !important;
+        font-size: 12.5px !important;
+        padding: 5px 14px !important;
+        border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+    div[data-testid="stPills"] button:hover {
+        border-color: #005f73 !important;
+        color: #005f73 !important;
+    }
+    div[data-testid="stPills"] button[aria-pressed="true"],
+    div[data-testid="stPills"] button[aria-checked="true"],
+    div[data-testid="stPills"] button[data-selected="true"],
+    div[data-testid="stPills"] button[kind="pillsActive"] {
+        background-color: #005f73 !important;
+        border-color: #005f73 !important;
+        color: #ffffff !important;
         font-weight: 700 !important;
+        box-shadow: 0 2px 6px rgba(0, 95, 115, 0.25) !important;
+    }
+    div[data-testid="stPills"] button[aria-pressed="true"] p,
+    div[data-testid="stPills"] button[aria-checked="true"] p,
+    div[data-testid="stPills"] button[data-selected="true"] p,
+    div[data-testid="stPills"] button[kind="pillsActive"] p {
+        color: #ffffff !important;
+    }
+
+    /* Lista Interativa de Ambientes (Botões de linha limpa com seta >) */
+    div[data-testid="stVerticalBlockBorderWrapper"] .env-list-btn button {
+        justify-content: space-between !important;
+        text-align: left !important;
+        background-color: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
         font-size: 13px !important;
-        padding: 8px 18px !important;
-        border: 1px solid #64748b !important;
-        transition: all 0.2s ease-in-out !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+        margin-bottom: -4px !important;
+        transition: all 0.15s ease !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] .env-list-btn button:hover {
+        background-color: #f0fdfa !important;
+        border-color: #0a9396 !important;
+        color: #005f73 !important;
+        transform: translateX(2px);
+    }
+
+    /* Painel Lateral Sobreposto (Drawer) */
+    .drawer-panel {
+        background-color: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-top: 5px solid #005f73;
+        border-radius: 12px;
+        padding: 18px 20px;
+        box-shadow: -6px 8px 24px rgba(15, 23, 42, 0.14);
+        margin-bottom: 10px;
+    }
+    .drawer-badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+    .drawer-badge {
+        background-color: #e6f4f1;
+        color: #005f73;
+        border: 1px solid #94d2bd;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 999px;
+    }
+    .drawer-badge-dark {
+        background-color: #1e293b;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 999px;
+    }
+    .drawer-title {
+        font-size: 17px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.3;
+        margin-bottom: 12px;
+    }
+    .drawer-section-lbl {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #475569;
+        margin-top: 10px;
+        margin-bottom: 3px;
+    }
+    .drawer-value {
+        font-size: 13px;
+        color: #0f172a;
+        line-height: 1.45;
+    }
+    .drawer-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    .drawer-btn-primary {
+        display: inline-block;
+        background-color: #005f73;
+        color: #ffffff !important;
+        text-decoration: none !important;
+        font-size: 12.5px;
+        font-weight: 700;
+        padding: 8px 14px;
+        border-radius: 8px;
+    }
+    .drawer-btn-primary:hover {
+        background-color: #0a9396;
+    }
+    .drawer-btn-secondary {
+        display: inline-block;
+        background-color: #f1f5f9;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1;
+        text-decoration: none !important;
+        font-size: 12.5px;
+        font-weight: 700;
+        padding: 8px 14px;
+        border-radius: 8px;
+    }
+    .drawer-btn-secondary:hover {
+        background-color: #e2e8f0;
     }
 
     .metric-card {
@@ -500,43 +634,29 @@ def buscar_detalhes_ambiente(nome_ambiente):
 
     return verts, segs
 
-# Modal Popup com as informações detalhadas do Ambiente
-if hasattr(st, "dialog"):
-    @st.dialog("🏛️ Detalhes do Ambiente de Inovação")
-    def exibir_popup_ambiente(dados):
-        st.subheader(dados["nome"])
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f"**ID SPAI:** `{dados['id']}`")
-            st.markdown(f"**Categoria:** {dados['categoria']}")
-            st.markdown(f"**Tipo:** {dados['tipo']}")
-        with c2:
-            st.markdown(f"**Município:** {dados['municipio']}")
-            st.markdown(f"**Região Administrativa:** {dados['regiao']}")
-            
-        st.markdown("---")
-        
-        if dados["verticais"]:
-            st.markdown("**💻 Verticais Tecnológicas Mapeadas:**")
-            st.write(", ".join(dados["verticais"]))
-        else:
-            st.caption("ℹ️ Verticais Tecnológicas: Não mapeadas na fase atual.")
+# Extrai campos opcionais extras da planilha (Endereço, Site, Contato) se disponíveis
+def extrair_campo_opcional(row, palavras_chave):
+    valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
+    for col in row.index:
+        c_norm = normalizar_texto(col)
+        if any(p in c_norm for p in palavras_chave):
+            val = str(row[col]).strip() if pd.notna(row[col]) else ""
+            if val.lower() not in valores_invalidos:
+                return val
+    return ""
 
-        if dados["segmentos"]:
-            st.markdown("**🏢 Segmentos de Mercado Mapeados:**")
-            st.write(", ".join(dados["segmentos"]))
-        else:
-            st.caption("ℹ️ Segmentos de Mercado: Não mapeados na fase atual.")
-
-# Monta o dicionário de informações do ambiente selecionado (mapa ou tabela)
-def montar_dados_popup(row_sel, col_id_orig, col_nome_orig, num_cols):
+# Monta o dicionário completo de informações do ambiente selecionado (mapa ou lista)
+def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     nome_env = str(row_sel[col_nome_orig]).strip()
     id_env = int(pd.to_numeric(row_sel[col_id_orig], errors="coerce") or 0)
     cat_env = formatar_categoria_exibicao(row_sel.iloc[1]) if num_cols > 1 else ""
     reg_env = str(row_sel.iloc[2]).strip() if num_cols > 2 else ""
     mun_env = str(row_sel.iloc[3]).strip() if num_cols > 3 else ""
     tipo_env = str(row_sel.iloc[4]).strip().title() if num_cols > 4 else ""
+
+    endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
+    site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
+    contato_env = extrair_campo_opcional(row_sel, ["contato", "email", "e-mail", "telefone", "responsavel", "gestor"])
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -547,22 +667,102 @@ def montar_dados_popup(row_sel, col_id_orig, col_nome_orig, num_cols):
         "regiao": reg_env,
         "municipio": mun_env,
         "tipo": tipo_env,
+        "endereco": endereco_env,
+        "site": site_env,
+        "contato": contato_env,
         "verticais": v_env,
-        "segmentos": s_env
+        "segmentos": s_env,
     }
 
-# Exibe o modal (ou expander de fallback) com os detalhes do ambiente
-def abrir_detalhes_ambiente(dados_popup):
-    if hasattr(st, "dialog"):
-        exibir_popup_ambiente(dados_popup)
+# Calcula o centro e o nível de zoom automático conforme os pontos filtrados
+def calcular_enquadramento_mapa(df_pontos, filtro_regional_ativo=False):
+    if df_pontos.empty:
+        return {"lat": -22.3, "lon": -48.8}, 6.1
+
+    lat_min, lat_max = df_pontos["Lat"].min(), df_pontos["Lat"].max()
+    lon_min, lon_max = df_pontos["Lon"].min(), df_pontos["Lon"].max()
+
+    centro = {
+        "lat": float((lat_min + lat_max) / 2.0),
+        "lon": float((lon_min + lon_max) / 2.0),
+    }
+
+    if not filtro_regional_ativo:
+        return {"lat": -22.3, "lon": -48.8}, 6.1
+
+    span = max(float(lat_max - lat_min), float(lon_max - lon_min))
+    if span < 0.05:
+        zoom = 11.2
+    elif span < 0.35:
+        zoom = 9.4
+    elif span < 0.9:
+        zoom = 8.4
+    elif span < 1.8:
+        zoom = 7.7
     else:
-        with st.expander(f"📍 Detalhes de {dados_popup['nome']}", expanded=True):
-            st.write(f"**ID SPAI:** `{dados_popup['id']}` | **Categoria:** {dados_popup['categoria']} | **Tipo:** {dados_popup['tipo']}")
-            st.write(f"**Município:** {dados_popup['municipio']} | **Região:** {dados_popup['regiao']}")
-            if dados_popup["verticais"]:
-                st.write("**Verticais:** " + ", ".join(dados_popup["verticais"]))
-            if dados_popup["segmentos"]:
-                st.write("**Segmentos:** " + ", ".join(dados_popup["segmentos"]))
+        zoom = 7.0
+
+    return centro, zoom
+
+# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, endereço, site e contato
+def renderizar_drawer_detalhes(dados):
+    endereco_txt = dados["endereco"] if dados["endereco"] else f"{dados['municipio']} — RA de {dados['regiao']}, SP"
+
+    # Link de Site (ou busca institucional caso não haja URL na coluna)
+    site_raw = dados["site"]
+    if site_raw:
+        site_url = site_raw if site_raw.startswith(("http://", "https://")) else f"https://{site_raw}"
+    else:
+        site_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' ' + dados['municipio'])}"
+
+    # Link de Contato (mailto se e-mail, tel se telefone, ou pesquisa de contato oficial)
+    contato_raw = dados["contato"]
+    if "@" in contato_raw:
+        contato_url = f"mailto:{contato_raw}"
+        contato_lbl = "✉️ Entrar em Contato"
+    elif contato_raw:
+        contato_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' contato')}"
+        contato_lbl = f"📞 {contato_raw}"
+    else:
+        contato_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' ' + dados['municipio'] + ' contato')}"
+        contato_lbl = "✉️ Contato Institucional"
+
+    verts_html = ", ".join(dados["verticais"]) if dados["verticais"] else "<i>Não mapeadas na fase atual.</i>"
+    segs_html = ", ".join(dados["segmentos"]) if dados["segmentos"] else "<i>Não mapeados na fase atual.</i>"
+
+    c_hdr, c_close = st.columns([5, 1])
+    with c_hdr:
+        st.markdown("<div style='font-size:12px; font-weight:800; color:#005f73; text-transform:uppercase; letter-spacing:0.6px; padding-top:4px;'>🏛️ Ficha do Ambiente</div>", unsafe_allow_html=True)
+    with c_close:
+        if st.button("✕", key="fechar_drawer_btn", help="Fechar painel de detalhes", use_container_width=True):
+            st.session_state["ambiente_drawer_selecionado"] = None
+            st.rerun()
+
+    html_drawer = f"""
+    <div class="drawer-panel">
+        <div class="drawer-badge-row">
+            <span class="drawer-badge-dark">ID #{dados['id']}</span>
+            <span class="drawer-badge">{dados['tipo']}</span>
+            <span class="drawer-badge">{dados['categoria']}</span>
+        </div>
+        <div class="drawer-title">{dados['nome']}</div>
+
+        <div class="drawer-section-lbl">📍 Endereço / Localização</div>
+        <div class="drawer-value">{endereco_txt}<br><span style="color:#475569; font-size:12px;">Região Administrativa de {dados['regiao']}</span></div>
+
+        <div class="drawer-section-lbl">💻 Verticais Tecnológicas</div>
+        <div class="drawer-value">{verts_html}</div>
+
+        <div class="drawer-section-lbl">🏢 Segmentos de Mercado</div>
+        <div class="drawer-value">{segs_html}</div>
+
+        <div class="drawer-actions">
+            <a href="{site_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-primary">🌐 Visitar Site</a>
+            <a href="{contato_url}" target="_blank" rel="noopener noreferrer" class="drawer-btn-secondary">{contato_lbl}</a>
+        </div>
+    </div>
+    """
+    st.markdown(html_drawer, unsafe_allow_html=True)
 
 # Mapeamento mestre de dados do SPAI pelo Nome do Ambiente
 col_spai_id = df_spai.columns[0]
@@ -831,8 +1031,6 @@ if painel_selecionado == "Visão Geral":
         st.title("Visão Geral dos Ambientes de Inovação")
         st.caption("Sistema Paulista de Ambientes de Inovação — Secretaria de Ciência, Tecnologia e Inovação de SP")
 
-    st.write("")
-
     total_membros = len(df_spai)
 
     if df_spai.shape[1] > 4:
@@ -881,7 +1079,7 @@ if painel_selecionado == "Visão Geral":
     top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{municipios_count}</div><div class="kpi-lbl-top">Municípios</div></div>', unsafe_allow_html=True)
     top5.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
 
-    st.write("")
+    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
     sec1, sec2, sec3, sec4, sec5, sec6, sec7 = st.columns(7)
     sec1.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{parques}</div><div class="kpi-lbl-sec">Parques Tecnológicos</div></div>', unsafe_allow_html=True)
@@ -892,77 +1090,174 @@ if painel_selecionado == "Visão Geral":
     sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
     sec7.markdown('<div class="kpi-box-sec"><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
 
-    st.markdown("---")
+    st.markdown("<hr style='margin: 12px 0;'>", unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # FILTROS E SEGMENTADORES DE DADOS
+    # 1. BARRA DE FILTROS COMPACTA (ABOVE THE FOLD)
     # ----------------------------------------------------
-    st.subheader("🔍 Filtros e Segmentadores")
-
-    st.markdown(f"""
-    <div class="filter-card-tipo">
-        <div class="filter-card-hdr">🏛️ PASSO 1: Selecione o Tipo de Membro SPAI</div>
-        <div class="filter-card-sub">Escolha a categoria principal de vinculação para atualizar dinamicamente as opções de formato de ambiente abaixo:</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    rotulo_todos = f"🌐 Todos os Membros ({total_membros})"
-    rotulo_plenos = f"🏛️ Membros Plenos ({plenos})"
-    rotulo_associados = f"🤝 Membros Associados ({associados})"
+    rotulo_todos = f"Todos ({total_membros})"
+    rotulo_plenos = f"Plenos ({plenos})"
+    rotulo_associados = f"Associados ({associados})"
     opcoes_tipo_display = [rotulo_todos, rotulo_plenos, rotulo_associados]
 
-    if hasattr(st, "pills"):
-        tipo_sel_display = st.pills("tipo_membro_highlight", opcoes_tipo_display, default=rotulo_todos, label_visibility="collapsed")
-    else:
-        tipo_sel_display = st.radio("Tipo de Membro:", opcoes_tipo_display, horizontal=True)
+    if "tipo_membro_vg" not in st.session_state or st.session_state["tipo_membro_vg"] not in opcoes_tipo_display:
+        st.session_state["tipo_membro_vg"] = rotulo_todos
+    if "cat_pills_vg" not in st.session_state:
+        st.session_state["cat_pills_vg"] = "Todas"
+    if "regiao_sel_vg" not in st.session_state:
+        st.session_state["regiao_sel_vg"] = "Todas"
+    if "cidade_sel_vg" not in st.session_state:
+        st.session_state["cidade_sel_vg"] = "Todas"
+    if "busca_nome_vg" not in st.session_state:
+        st.session_state["busca_nome_vg"] = ""
+    if "ambiente_drawer_selecionado" not in st.session_state:
+        st.session_state["ambiente_drawer_selecionado"] = None
+    if "ultimo_ponto_mapa" not in st.session_state:
+        st.session_state["ultimo_ponto_mapa"] = []
 
-    df_filt = df_spai.copy()
-    if "Plenos" in str(tipo_sel_display) and df_filt.shape[1] > 4:
-        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Pleno"]
-    elif "Associados" in str(tipo_sel_display) and df_filt.shape[1] > 4:
-        df_filt = df_filt[df_filt.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
+    def resetar_filtros_vg():
+        st.session_state["tipo_membro_vg"] = rotulo_todos
+        st.session_state["cat_pills_vg"] = "Todas"
+        st.session_state["regiao_sel_vg"] = "Todas"
+        st.session_state["cidade_sel_vg"] = "Todas"
+        st.session_state["busca_nome_vg"] = ""
+        st.session_state["ambiente_drawer_selecionado"] = None
+        st.session_state["ultimo_ponto_mapa"] = []
 
-    col_b_categorias = df_filt.iloc[:, 1].dropna().astype(str).str.strip().unique().tolist()
-    cats_formatadas = list(set([formatar_categoria_exibicao(c) for c in col_b_categorias if formatar_categoria_exibicao(c) != ""]))
-    cats_ordenadas = ordenar_categorias_prioritarias(cats_formatadas)
-    opcoes_categorias = ["Todas"] + cats_ordenadas
+    hdr_f, btn_f = st.columns([6, 1])
+    with hdr_f:
+        st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-top:4px;'>🔍 Explorar Ambientes de Inovação</div>", unsafe_allow_html=True)
+    with btn_f:
+        st.button("↺ Limpar filtros", key="btn_limpar_filtros_vg", on_click=resetar_filtros_vg, use_container_width=True)
 
-    st.write("")
-    st.markdown("**📂 PASSO 2: Categoria / Formato do Ambiente:**")
-    if hasattr(st, "pills"):
-        cat_sel = st.pills(
-            label="Categoria do Ambiente",
-            options=opcoes_categorias,
-            default="Todas",
-            key="cat_pills_vg",
-            label_visibility="collapsed"
+    # Linha Única de Controles Principais: Tipo de Membro | Região Administrativa | Município
+    f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4])
+
+    with f_col1:
+        st.markdown(
+            "<div style='font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;' "
+            "title='Escolha a vinculação institucional: Membros Plenos possuem credenciamento definitivo e Membros Associados estão em processo de estruturação ou parceria.'>"
+            "Tipo de Membro <span style='display:inline-block; background:#e2e8f0; color:#0f172a; border-radius:50%; width:15px; height:15px; text-align:center; font-size:10px; line-height:15px; cursor:help;'>?</span>"
+            "</div>",
+            unsafe_allow_html=True,
         )
+        if hasattr(st, "segmented_control"):
+            tipo_sel_display = st.segmented_control(
+                label="Tipo de Membro",
+                options=opcoes_tipo_display,
+                key="tipo_membro_vg",
+                label_visibility="collapsed",
+            )
+            if not tipo_sel_display:
+                tipo_sel_display = rotulo_todos
+        else:
+            tipo_sel_display = st.radio(
+                "Tipo de Membro",
+                opcoes_tipo_display,
+                key="tipo_membro_vg",
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+
+    df_por_tipo = df_spai.copy()
+    if "Plenos" in str(tipo_sel_display) and df_por_tipo.shape[1] > 4:
+        df_por_tipo = df_por_tipo[df_por_tipo.iloc[:, 4].astype(str).str.strip().str.title() == "Pleno"]
+    elif "Associados" in str(tipo_sel_display) and df_por_tipo.shape[1] > 4:
+        df_por_tipo = df_por_tipo[df_por_tipo.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
+
+    # Calcula contagens dinâmicas por Categoria para exibir nos botões (ex: Parques Tecnológicos (24))
+    cats_series = df_por_tipo.iloc[:, 1].apply(formatar_categoria_exibicao)
+    contagem_cats = cats_series[cats_series != ""].value_counts().to_dict()
+    cats_ordenadas = ordenar_categorias_prioritarias(list(contagem_cats.keys()))
+
+    mapa_label_para_cat = {"Todas": "Todas"}
+    opcoes_categorias_display = ["Todas"]
+    for c in cats_ordenadas:
+        qtd_c = contagem_cats.get(c, 0)
+        lbl_c = f"{c} ({qtd_c})"
+        opcoes_categorias_display.append(lbl_c)
+        mapa_label_para_cat[lbl_c] = c
+
+    # Garante que a seleção atual continue válida mesmo após trocar o Tipo de Membro
+    cat_atual_limpa = mapa_label_para_cat.get(st.session_state["cat_pills_vg"], "Todas")
+    if cat_atual_limpa == "Todas":
+        st.session_state["cat_pills_vg"] = "Todas"
     else:
-        cat_sel = st.selectbox("Categoria:", opcoes_categorias, key="cat_select_vg")
+        correspondente = [lbl for lbl, raw in mapa_label_para_cat.items() if raw == cat_atual_limpa]
+        st.session_state["cat_pills_vg"] = correspondente[0] if correspondente else "Todas"
 
-    if cat_sel and cat_sel != "Todas":
+    df_pos_cat = df_por_tipo.copy()
+    if cat_atual_limpa != "Todas":
+        df_pos_cat = df_pos_cat[df_pos_cat.iloc[:, 1].apply(formatar_categoria_exibicao) == cat_atual_limpa]
+
+    with f_col2:
+        regioes_unicas = ["Todas"] + sorted(list(df_pos_cat.iloc[:, 2].dropna().astype(str).str.strip().unique())) if df_pos_cat.shape[1] > 2 else ["Todas"]
+        if st.session_state["regiao_sel_vg"] not in regioes_unicas:
+            st.session_state["regiao_sel_vg"] = "Todas"
+        regiao_sel = st.selectbox("Região Administrativa", regioes_unicas, key="regiao_sel_vg")
+
+    df_pos_reg = df_pos_cat.copy()
+    if regiao_sel != "Todas" and df_pos_reg.shape[1] > 2:
+        df_pos_reg = df_pos_reg[df_pos_reg.iloc[:, 2].astype(str).str.strip() == regiao_sel]
+
+    with f_col3:
+        cidades_unicas = ["Todas"] + sorted(list(df_pos_reg.iloc[:, 3].dropna().astype(str).str.strip().unique())) if df_pos_reg.shape[1] > 3 else ["Todas"]
+        if st.session_state["cidade_sel_vg"] not in cidades_unicas:
+            st.session_state["cidade_sel_vg"] = "Todas"
+        cidade_sel = st.selectbox("Município", cidades_unicas, key="cidade_sel_vg")
+
+    # Linha Subordinada: Pills de Formato / Categoria com Contadores Dinâmicos
+    st.markdown("<div style='font-size:12px; font-weight:700; color:#475569; margin: 2px 0 4px 0;'>Formato do Ambiente (filtrado pelo tipo acima):</div>", unsafe_allow_html=True)
+    if hasattr(st, "pills"):
+        cat_sel_display = st.pills(
+            label="Formato do Ambiente",
+            options=opcoes_categorias_display,
+            key="cat_pills_vg",
+            label_visibility="collapsed",
+        )
+        if not cat_sel_display:
+            cat_sel_display = "Todas"
+    else:
+        cat_sel_display = st.selectbox(
+            "Formato do Ambiente:",
+            opcoes_categorias_display,
+            key="cat_select_vg",
+            label_visibility="collapsed",
+        )
+
+    cat_sel = mapa_label_para_cat.get(cat_sel_display, "Todas")
+
+    # Aplica filtros finais sobre df_spai
+    df_filt = df_por_tipo.copy()
+    if cat_sel != "Todas":
         df_filt = df_filt[df_filt.iloc[:, 1].apply(formatar_categoria_exibicao) == cat_sel]
-
-    st.write("")
-
-    st.markdown("**📍 PASSO 3: Filtros de Localização Regional:**")
-    c1, c2 = st.columns(2)
-
-    regioes_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 2].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 2 else ["Todas"]
-    regiao_sel = c1.selectbox("Região Administrativa", regioes_unicas)
     if regiao_sel != "Todas" and df_filt.shape[1] > 2:
         df_filt = df_filt[df_filt.iloc[:, 2].astype(str).str.strip() == regiao_sel]
-
-    cidades_unicas = ["Todas"] + sorted(list(df_filt.iloc[:, 3].dropna().astype(str).str.strip().unique())) if df_filt.shape[1] > 3 else ["Todas"]
-    cidade_sel = c2.selectbox("Município", cidades_unicas)
     if cidade_sel != "Todas" and df_filt.shape[1] > 3:
         df_filt = df_filt[df_filt.iloc[:, 3].astype(str).str.strip() == cidade_sel]
 
-    st.write("")
-    col_m, col_l = st.columns([6, 4])
-
     col_id_orig = df_filt.columns[0]
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
+
+    # Filtro de Busca Textual Rápida (aplicado tanto à lista quanto ao mapa)
+    termo_busca = st.session_state.get("busca_nome_vg", "").strip()
+    if termo_busca:
+        termo_norm = normalizar_texto(termo_busca)
+        df_filt = df_filt[df_filt[col_nome_orig].astype(str).apply(lambda x: termo_norm in normalizar_texto(x))]
+
+    df_filt = df_filt.reset_index(drop=True)
+
+    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+
+    # ----------------------------------------------------
+    # 2. ÁREA PRINCIPAL: MAPA + LISTA (OU DRAWER LATERAL)
+    # ----------------------------------------------------
+    drawer_ativo = st.session_state.get("ambiente_drawer_selecionado")
+    if drawer_ativo is not None:
+        col_m, col_l, col_drawer = st.columns([5.2, 3.3, 3.5])
+    else:
+        col_m, col_l = st.columns([6.2, 3.8])
+        col_drawer = None
 
     map_event = None
     df_m = pd.DataFrame()
@@ -974,104 +1269,192 @@ if painel_selecionado == "Visão Geral":
         df_m = df_m.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
 
         if not df_m.empty:
-            hover_dict = {"Lat": False, "Lon": False}
-            labels_dict = {}
-            if df_filt.shape[1] > 0: hover_dict[df_filt.columns[0]] = True; labels_dict[df_filt.columns[0]] = "ID"
-            if df_filt.shape[1] > 1: hover_dict[df_filt.columns[1]] = True; labels_dict[df_filt.columns[1]] = "Categoria"
-            if df_filt.shape[1] > 2: hover_dict[df_filt.columns[2]] = True; labels_dict[df_filt.columns[2]] = "Região Administrativa"
-            if df_filt.shape[1] > 3: hover_dict[df_filt.columns[3]] = True; labels_dict[df_filt.columns[3]] = "Município"
-            if df_filt.shape[1] > 4: hover_dict[df_filt.columns[4]] = True; labels_dict[df_filt.columns[4]] = "Tipo"
+            # Adiciona colunas formatadas para tooltip limpo no mapa
+            df_m["_Categoria_Fmt"] = df_m.iloc[:, 1].apply(formatar_categoria_exibicao) if df_m.shape[1] > 1 else ""
+            df_m["_Regiao_Fmt"] = df_m.iloc[:, 2].astype(str).str.strip() if df_m.shape[1] > 2 else ""
+            df_m["_Municipio_Fmt"] = df_m.iloc[:, 3].astype(str).str.strip() if df_m.shape[1] > 3 else ""
+            df_m["_Tipo_Fmt"] = df_m.iloc[:, 4].astype(str).str.strip().str.title() if df_m.shape[1] > 4 else ""
+
+            filtro_reg_ativo = (regiao_sel != "Todas") or (cidade_sel != "Todas") or bool(termo_busca)
+            centro_mapa, zoom_mapa = calcular_enquadramento_mapa(df_m, filtro_regional_ativo=filtro_reg_ativo)
+
+            hover_dict = {
+                "Lat": False,
+                "Lon": False,
+                "_Categoria_Fmt": True,
+                "_Municipio_Fmt": True,
+                "_Regiao_Fmt": True,
+                "_Tipo_Fmt": True,
+            }
+            labels_dict = {
+                "_Categoria_Fmt": "Categoria",
+                "_Municipio_Fmt": "Município",
+                "_Regiao_Fmt": "Região Administrativa",
+                "_Tipo_Fmt": "Tipo",
+            }
 
             fig = px.scatter_map(
-                df_m, lat="Lat", lon="Lon",
+                df_m,
+                lat="Lat",
+                lon="Lon",
                 hover_name=col_nome_orig,
                 hover_data=hover_dict,
                 labels=labels_dict,
-                zoom=6.1, center={"lat": -22.3, "lon": -48.8},
-                height=480
+                zoom=zoom_mapa,
+                center=centro_mapa,
+                height=500,
             )
             fig.update_layout(
                 map_style="carto-positron",
-                margin={"r":0, "t":0, "l":0, "b":0}
+                margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                uirevision=f"{regiao_sel}_{cidade_sel}_{termo_busca}",
             )
-            fig.update_traces(marker=dict(size=14, color="#005f73", opacity=0.85))
+
+            # Destaca em laranja o pino se o ambiente estiver aberto no drawer
+            nome_ativo = drawer_ativo["nome"] if drawer_ativo else ""
+            cores_pinos = [
+                "#e85d04" if str(n).strip() == nome_ativo else "#005f73"
+                for n in df_m[col_nome_orig]
+            ]
+            tamanhos_pinos = [
+                19 if str(n).strip() == nome_ativo else 13
+                for n in df_m[col_nome_orig]
+            ]
+            fig.update_traces(marker=dict(size=tamanhos_pinos, color=cores_pinos, opacity=0.9))
 
             map_event = st.plotly_chart(
                 fig,
                 on_select="rerun",
                 selection_mode="points",
-                width='stretch'
+                key="mapa_spai_vg",
+                use_container_width=True,
             )
         else:
-            st.warning("⚠️ Não há coordenadas geográficas válidas para exibir no mapa com os filtros selecionados.")
+            st.warning("⚠️ Nenhum ambiente com coordenadas mapeadas encontrado para os filtros aplicados.")
 
     with col_l:
-        st.markdown("<h4 style='text-align: center; margin-bottom: 2px;'>Nome do Ambiente</h4>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; font-size: 12px; color: #475569; margin-top: 0;'>Clique em um ambiente para ver os detalhes</p>", unsafe_allow_html=True)
-
-        df_filt_reset = df_filt.reset_index(drop=True)
-        df_exibicao = df_filt_reset[[col_id_orig, col_nome_orig]].copy()
-        df_exibicao.columns = ["ID", "Nome do Ambiente"]
-        df_exibicao["ID"] = pd.to_numeric(df_exibicao["ID"], errors="coerce").fillna(0).astype(int)
-        df_exibicao = df_exibicao.set_index("ID")
-
-        table_event = st.dataframe(
-            df_exibicao,
-            column_config={
-                "Nome do Ambiente": st.column_config.TextColumn("Nome do Ambiente", width="large")
-            },
-            on_select="rerun",
-            selection_mode="single-row",
-            width='stretch',
-            height=430
+        # Campo de busca textual acima da lista (sem título duplicado nem checkboxes)
+        st.text_input(
+            label="Buscar ambiente",
+            placeholder="🔎 Buscar ambiente por nome (ex: SUPERA, Inova)...",
+            key="busca_nome_vg",
+            label_visibility="collapsed",
         )
 
-    # ----------------------------------------------------
-    # ABERTURA DO POPUP (CLIQUE NO MAPA OU NA LISTA)
-    # ----------------------------------------------------
+        qtd_encontrados = len(df_filt)
+        lbl_resultados = "ambiente encontrado" if qtd_encontrados == 1 else "ambientes encontrados"
+        st.markdown(
+            f"<div style='font-size:11.5px; font-weight:700; color:#475569; margin: -4px 0 6px 2px;'>"
+            f"{qtd_encontrados} {lbl_resultados} · Clique para abrir detalhes"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+
+        # Lista rolável limpa com seta (>) à direita e atributo data-env-name para hover no mapa
+        with st.container(height=435, border=True):
+            if df_filt.empty:
+                st.info("Nenhum ambiente corresponde à busca atual.")
+            else:
+                for idx_row, row_item in df_filt.iterrows():
+                    nome_item = str(row_item[col_nome_orig]).strip()
+                    mun_item = str(row_item.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
+                    rotulo_botao = f"{nome_item}  ·  {mun_item}   ›" if mun_item else f"{nome_item}   ›"
+
+                    st.markdown(f'<div class="env-list-btn" data-env-name="{nome_item}">', unsafe_allow_html=True)
+                    if st.button(rotulo_botao, key=f"env_btn_{idx_row}_{nome_item}", use_container_width=True):
+                        st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
+                            row_item,
+                            col_id_orig,
+                            col_nome_orig,
+                            df_filt.shape[1],
+                        )
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Verifica clique em marcador do mapa para abrir/atualizar o Drawer lateral
     pontos_mapa = []
     if map_event and isinstance(map_event, dict) and "selection" in map_event:
         pontos_mapa = map_event["selection"].get("points", [])
 
-    linhas_tabela = []
-    if table_event and isinstance(table_event, dict) and "selection" in table_event:
-        linhas_tabela = table_event["selection"].get("rows", [])
-
-    if "ultimo_ponto_mapa" not in st.session_state:
-        st.session_state["ultimo_ponto_mapa"] = []
-    if "ultima_linha_tabela" not in st.session_state:
-        st.session_state["ultima_linha_tabela"] = []
-
-    dados_popup_selecionado = None
-
-    # Verifica se houve novo clique na lista de nomes dos ambientes
-    if linhas_tabela != st.session_state["ultima_linha_tabela"]:
-        st.session_state["ultima_linha_tabela"] = list(linhas_tabela)
-        if linhas_tabela:
-            idx_linha = linhas_tabela[0]
-            if idx_linha is not None and 0 <= idx_linha < len(df_filt_reset):
-                dados_popup_selecionado = montar_dados_popup(
-                    df_filt_reset.iloc[idx_linha],
-                    col_id_orig,
-                    col_nome_orig,
-                    df_filt_reset.shape[1]
-                )
-
-    # Verifica se houve novo clique em marcador do mapa
     if pontos_mapa != st.session_state["ultimo_ponto_mapa"]:
         st.session_state["ultimo_ponto_mapa"] = list(pontos_mapa)
         if pontos_mapa and not df_m.empty:
             idx_ponto = pontos_mapa[0].get("point_index")
             if idx_ponto is not None and 0 <= idx_ponto < len(df_m):
-                dados_popup_selecionado = montar_dados_popup(
+                st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
                     df_m.iloc[idx_ponto],
                     col_id_orig,
                     col_nome_orig,
-                    df_filt.shape[1]
+                    df_filt.shape[1],
                 )
+                st.rerun()
 
-    if dados_popup_selecionado is not None:
-        abrir_detalhes_ambiente(dados_popup_selecionado)
+    # Renderiza o Painel Lateral Sobreposto (Drawer) à direita quando um ambiente está selecionado
+    if col_drawer is not None and st.session_state.get("ambiente_drawer_selecionado") is not None:
+        with col_drawer:
+            renderizar_drawer_detalhes(st.session_state["ambiente_drawer_selecionado"])
+
+    # ----------------------------------------------------
+    # 3. SINCRONIA HOVER LISTA -> DESTAQUE NO PINO DO MAPA
+    # ----------------------------------------------------
+    if not df_m.empty:
+        nomes_mapa_json = json.dumps(df_m[col_nome_orig].astype(str).str.strip().tolist(), ensure_ascii=False)
+        nome_selecionado_json = json.dumps(drawer_ativo["nome"] if drawer_ativo else "", ensure_ascii=False)
+        components.html(
+            f"""
+            <script>
+            (function() {{
+                const doc = window.parent.document;
+                const nomesMapa = {nomes_mapa_json};
+                const nomeAtivo = {nome_selecionado_json};
+
+                function destacarPinoMapa(nomeHover) {{
+                    const plots = doc.querySelectorAll('.js-plotly-plot');
+                    plots.forEach(gd => {{
+                        if (!gd || !gd.data || !gd.data.length) return;
+                        const trace = gd.data[0];
+                        if (!trace || !trace.hovertext) return;
+
+                        const cores = nomesMapa.map(n => {{
+                            if (nomeHover && n === nomeHover) return '#e85d04';
+                            if (nomeAtivo && n === nomeAtivo) return '#e85d04';
+                            return '#005f73';
+                        }});
+                        const tamanhos = nomesMapa.map(n => {{
+                            if (nomeHover && n === nomeHover) return 21;
+                            if (nomeAtivo && n === nomeAtivo) return 19;
+                            return 13;
+                        }});
+
+                        if (window.parent.Plotly) {{
+                            window.parent.Plotly.restyle(gd, {{
+                                'marker.color': [cores],
+                                'marker.size': [tamanhos]
+                            }}, [0]);
+                        }}
+                    }});
+                }}
+
+                function vincularHoverLista() {{
+                    const wrappers = doc.querySelectorAll('.env-list-btn');
+                    wrappers.forEach(w => {{
+                        if (w.dataset.hoverBound === '1') return;
+                        w.dataset.hoverBound = '1';
+                        const nomeEnv = w.getAttribute('data-env-name');
+                        w.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
+                        w.addEventListener('mouseleave', () => destacarPinoMapa(null));
+                    }});
+                }}
+
+                vincularHoverLista();
+                const obs = new MutationObserver(vincularHoverLista);
+                obs.observe(doc.body, {{ childList: true, subtree: true }});
+            }})();
+            </script>
+            """,
+            height=0,
+            width=0,
+        )
 
 # ====================================================
 # PAINEL 2: VERTICAIS TECNOLÓGICAS
