@@ -287,21 +287,37 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa de Ambientes (Botões de linha limpa com seta >) */
-    div[data-testid="stVerticalBlockBorderWrapper"] .env-list-btn button {
+    /* Lista Interativa Compacta de Ambientes (elimina o gap padrão de 1rem do Streamlit) */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 6px 8px !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
+        gap: 4px !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stElementContainer"] {
+        margin: 0 !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button {
         justify-content: space-between !important;
         text-align: left !important;
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-        font-size: 13px !important;
+        border-radius: 7px !important;
+        padding: 6px 11px !important;
+        min-height: 34px !important;
+        height: auto !important;
+        line-height: 1.25 !important;
+        font-size: 12.5px !important;
         font-weight: 600 !important;
         color: #0f172a !important;
-        margin-bottom: -4px !important;
-        transition: all 0.15s ease !important;
+        transition: all 0.12s ease !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] .env-list-btn button:hover {
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button p {
+        font-size: 12.5px !important;
+        line-height: 1.25 !important;
+        margin: 0 !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button:hover {
         background-color: #f0fdfa !important;
         border-color: #0a9396 !important;
         color: #005f73 !important;
@@ -1364,7 +1380,7 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-        # Lista rolável limpa com seta (>) à direita e atributo data-env-name para hover no mapa
+        # Lista rolável compacta (1 elemento por linha, sem divs extras que criam lacunas)
         with st.container(height=435, border=True):
             if df_filt.empty:
                 st.info("Nenhum ambiente corresponde à busca atual.")
@@ -1373,9 +1389,7 @@ if painel_selecionado == "Visão Geral":
                     nome_item = str(row_item[col_nome_orig]).strip()
                     mun_item = str(row_item.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
                     rotulo_botao = f"{nome_item}  ·  {mun_item}   ›" if mun_item else f"{nome_item}   ›"
-                    nome_item_esc = html.escape(nome_item, quote=True)
 
-                    st.markdown(f'<div class="env-list-btn" data-env-name="{nome_item_esc}">', unsafe_allow_html=True)
                     if st.button(rotulo_botao, key=f"env_btn_{idx_row}_{nome_item}", use_container_width=True):
                         st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
                             row_item,
@@ -1384,7 +1398,6 @@ if painel_selecionado == "Visão Geral":
                             df_filt.shape[1],
                         )
                         st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
 
     # Verifica clique em marcador do mapa para abrir/atualizar o Drawer lateral
     pontos_mapa = []
@@ -1451,13 +1464,14 @@ if painel_selecionado == "Visão Geral":
                 }}
 
                 function vincularHoverLista() {{
-                    const wrappers = doc.querySelectorAll('.env-list-btn');
-                    wrappers.forEach(w => {{
-                        if (w.dataset.hoverBound === '1') return;
-                        w.dataset.hoverBound = '1';
-                        const nomeEnv = w.getAttribute('data-env-name');
-                        w.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
-                        w.addEventListener('mouseleave', () => destacarPinoMapa(null));
+                    const botoes = doc.querySelectorAll('div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button');
+                    botoes.forEach(btn => {{
+                        if (btn.dataset.hoverBound === '1') return;
+                        btn.dataset.hoverBound = '1';
+                        const textoCompleto = (btn.innerText || btn.textContent || '').trim();
+                        const nomeEnv = textoCompleto.split('  ·  ')[0].replace(/\\s*›\\s*$/, '').trim();
+                        btn.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
+                        btn.addEventListener('mouseleave', () => destacarPinoMapa(null));
                     }});
                 }}
 
