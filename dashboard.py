@@ -42,10 +42,10 @@ def formatar_categoria_exibicao(cat):
     c_norm = normalizar_texto(cat_limpa)
     if "parque" in c_norm:
         return "Parques Tecnológicos"
-    if "incubadora" in c_norm:
-        return "Incubadoras"
     if "centro de inov" in c_norm or "centros de inov" in c_norm:
         return "Centros de Inovação"
+    if "incubadora" in c_norm:
+        return "Incubadoras"
     if "hub" in c_norm or "conex" in c_norm:
         return "Centros de Conexão"
     if "aceleradora" in c_norm:
@@ -96,6 +96,14 @@ def obter_icone_formato_spai(tipo_formato, cor="#005f73", tamanho=24):
             f'<path d="M17.3 16.7 14.2 13.8"/>'
             f'</svg>'
         )
+    if tipo_formato == "distrito":
+        return (
+            f'<svg {props}>'
+            f'<polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>'
+            f'<line x1="9" y1="3" x2="9" y2="18"/>'
+            f'<line x1="15" y1="6" x2="15" y2="21"/>'
+            f'</svg>'
+        )
     return ""
 
 # Retorna ícone SVG minimalista de acordo com o tema da Vertical ou Segmento
@@ -140,8 +148,8 @@ def obter_icone_svg(categoria, cor="#005f73", tamanho=26):
 def ordenar_categorias_prioritarias(lista_cats):
     ordem_padrao = {
         "Parques Tecnológicos": 0,
-        "Incubadoras": 1,
-        "Centros de Inovação": 2,
+        "Centros de Inovação": 1,
+        "Incubadoras": 2,
         "Centros de Conexão": 3,
         "Aceleradoras": 4,
         "Outros Formatos": 5,
@@ -202,33 +210,34 @@ st.markdown("""
     <style>
     .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 
-    /* Card de Destaque Executivo - Total de Membros */
+    /* Card de Destaque Executivo Principal - Total de Membros */
     .kpi-box-membros {
-        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        background: linear-gradient(135deg, #0f172a 0%, #005f73 100%);
         color: #ffffff;
-        border-radius: 10px;
-        padding: 13px 10px;
+        border-radius: 12px;
+        padding: 15px 14px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-        border-left: 5px solid #0a9396;
-        min-height: 76px;
+        box-shadow: 0 6px 18px rgba(0, 95, 115, 0.24);
+        border: 1px solid #0a9396;
+        border-left: 6px solid #94d2bd;
+        min-height: 82px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
     }
     .kpi-val-membros {
-        font-size: 32px;
-        font-weight: 800;
+        font-size: 38px;
+        font-weight: 900;
         line-height: 1;
         color: #ffffff;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.8px;
     }
     .kpi-lbl-membros {
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.9px;
         margin-top: 6px;
         color: #94d2bd;
     }
@@ -242,16 +251,16 @@ st.markdown("""
         padding: 13px 8px;
         text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        min-height: 76px;
+        min-height: 82px;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
     }
-    .kpi-val-top { font-size: 29px; font-weight: 800; line-height: 1; color: #005f73; }
+    .kpi-val-top { font-size: 28px; font-weight: 800; line-height: 1; color: #005f73; }
     .kpi-lbl-top { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; margin-top: 6px; color: #1e293b; }
 
-    /* Grupo de Destaque dos 3 Formatos Principais (Parques, Incubadoras, Centros de Inovação) */
+    /* Grupo de Destaque dos 3 Formatos Principais (Parques, Centros de Inovação, Incubadoras) */
     .formato-destaque-card {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
@@ -332,10 +341,10 @@ st.markdown("""
         border-radius: 999px;
     }
 
-    /* Faixa Secundária dos Demais Formatos (Aceleradoras, Outros, Distritos) */
+    /* Faixa Secundária dos Demais Formatos (com destaque para Distritos de Inovação) */
     .formato-sec-bar {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr 1fr 1fr 1.35fr;
         gap: 10px;
         margin-top: 10px;
     }
@@ -348,7 +357,20 @@ st.markdown("""
         align-items: center;
         justify-content: space-between;
         gap: 10px;
-        min-height: 44px;
+        min-height: 46px;
+    }
+    .formato-sec-item-distrito {
+        background: linear-gradient(135deg, #f0fdfa 0%, #e6f4f1 100%);
+        border: 1.5px solid #0a9396;
+        border-left: 5px solid #005f73;
+        border-radius: 10px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 48px;
+        box-shadow: 0 3px 10px rgba(0, 95, 115, 0.12);
     }
     .formato-sec-lbl {
         display: inline-flex;
@@ -357,6 +379,15 @@ st.markdown("""
         font-size: 12.5px;
         font-weight: 600;
         color: #334155;
+        line-height: 1.25;
+    }
+    .formato-sec-lbl-distrito {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #005f73;
         line-height: 1.25;
     }
     .formato-sec-right {
@@ -381,13 +412,14 @@ st.markdown("""
         align-items: center;
         background-color: #fef3c7;
         color: #92400e;
-        border: 1px solid #fde68a;
-        font-size: 10.5px;
-        font-weight: 700;
-        padding: 3px 9px;
+        border: 1px solid #f59e0b;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 4px 10px;
         border-radius: 999px;
         white-space: nowrap;
-        letter-spacing: 0.2px;
+        letter-spacing: 0.25px;
+        box-shadow: 0 1px 3px rgba(146, 64, 14, 0.12);
     }
 
     @media (max-width: 992px) {
@@ -1186,7 +1218,7 @@ st.sidebar.info("""
 O **SPAI** é um programa da política pública de inovação do Estado de São Paulo, gerido pela **Secretaria de Ciência, Tecnologia e Inovação (SCTI-SP)**.
 
 📌 **Objetivo:**
-Incentivar investimentos em inovação, fortalecer a pesquisa científica e conectar parques tecnológicos, incubadoras, centros de inovação, centros de conexão e aceleradoras ao setor produtivo.
+Incentivar investimentos em inovação, fortalecer a pesquisa científica e conectar parques tecnológicos, centros de inovação, incubadoras, centros de conexão e aceleradoras ao setor produtivo.
 
 🔗 [Saiba mais no site oficial da SCTI](https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai)
 """)
@@ -1422,7 +1454,7 @@ if painel_selecionado == "Visão Geral":
     else:
         parques = incubadoras = centros = centros_conexao = aceleradoras = outros = 0
 
-    top1, top2, top3, top4, top5 = st.columns(5)
+    top1, top2, top3, top4, top5 = st.columns([1.45, 1, 1, 1, 1])
     top1.markdown(f'''
         <div class="kpi-box-membros">
             <div class="kpi-val-membros">{total_membros}</div>
@@ -1436,7 +1468,7 @@ if painel_selecionado == "Visão Geral":
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # Grupo de destaque: os 3 formatos principais lado a lado com ícones, tooltips, proporção e barra de progresso
+    # Grupo de destaque: Parques Tecnológicos, Centros de Inovação e Incubadoras (nesta ordem)
     base_total = max(total_membros, 1)
     destaques_principais = [
         {
@@ -1458,31 +1490,31 @@ if painel_selecionado == "Visão Geral":
             ),
         },
         {
-            "valor": incubadoras,
-            "label": "Incubadoras",
-            "icone": obter_icone_formato_spai("incubadora", cor="#005f73", tamanho=22),
-            "tooltip_html": (
-                '<span class="help-tip-wrap">'
-                '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Incubadoras">?</span>'
-                '<div class="help-tip-popover" role="tooltip">'
-                '<p><strong>Incubadoras</strong> são empreendimentos que, por tempo limitado, oferecem espaço físico para instalação de empresas e empreendimentos nascentes '
-                'voltados ao desenvolvimento de produtos e processos intensivos em conhecimento, disponibilizando suporte gerencial e tecnológico, assim como outros serviços '
-                'correlatos de valor agregado, com vista ao seu crescimento e consolidação.</p>'
-                '</div>'
-                '</span>'
-            ),
-        },
-        {
             "valor": centros,
             "label": "Centros de Inovação",
             "icone": obter_icone_formato_spai("centro_inovacao", cor="#005f73", tamanho=22),
             "tooltip_html": (
                 '<span class="help-tip-wrap">'
                 '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Centros de Inovação Tecnológica">?</span>'
-                '<div class="help-tip-popover help-tip-popover-right" role="tooltip">'
+                '<div class="help-tip-popover" role="tooltip">'
                 '<p><strong>Centro de Inovação Tecnológica</strong> é o empreendimento que concentra, integra e oferece um conjunto de mecanismos e serviços '
                 'de suporte ao processo de inovação tecnológica das empresas, constituindo-se, também, em espaço de interação empresarial-acadêmica '
                 'para o desenvolvimento de setores econômicos.</p>'
+                '</div>'
+                '</span>'
+            ),
+        },
+        {
+            "valor": incubadoras,
+            "label": "Incubadoras",
+            "icone": obter_icone_formato_spai("incubadora", cor="#005f73", tamanho=22),
+            "tooltip_html": (
+                '<span class="help-tip-wrap">'
+                '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Incubadoras">?</span>'
+                '<div class="help-tip-popover help-tip-popover-right" role="tooltip">'
+                '<p><strong>Incubadoras</strong> são empreendimentos que, por tempo limitado, oferecem espaço físico para instalação de empresas e empreendimentos nascentes '
+                'voltados ao desenvolvimento de produtos e processos intensivos em conhecimento, disponibilizando suporte gerencial e tecnológico, assim como outros serviços '
+                'correlatos de valor agregado, com vista ao seu crescimento e consolidação.</p>'
                 '</div>'
                 '</span>'
             ),
@@ -1518,10 +1550,11 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-    # Faixa secundária: formatos complementares e Distritos de Inovação com tooltip explicativo
+    # Faixa secundária: formatos complementares e Distritos de Inovação em destaque
     pct_conexao = formatar_percentual_ptbr((centros_conexao / base_total) * 100)
     pct_acel = formatar_percentual_ptbr((aceleradoras / base_total) * 100)
     pct_outros = formatar_percentual_ptbr((outros / base_total) * 100)
+    icone_distrito = obter_icone_formato_spai("distrito", cor="#005f73", tamanho=18)
 
     html_faixa_sec = (
         f'<div class="formato-sec-bar">'
@@ -1537,8 +1570,9 @@ if painel_selecionado == "Visão Geral":
         f'<span class="formato-sec-lbl">Outros Formatos</span>'
         f'<div class="formato-sec-right"><span class="formato-sec-val">{outros}</span><span class="formato-sec-pct">({pct_outros})</span></div>'
         f'</div>'
-        f'<div class="formato-sec-item">'
-        f'<span class="formato-sec-lbl">'
+        f'<div class="formato-sec-item-distrito">'
+        f'<span class="formato-sec-lbl-distrito">'
+        f'{icone_distrito}'
         f'<span>Distritos de Inovação</span>'
         f'<span class="help-tip-wrap">'
         f'<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Distritos de Inovação">?</span>'
