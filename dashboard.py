@@ -7,7 +7,7 @@ import re
 import json
 import html
 import unicodedata
-from urllib.parse import quote, urlencode
+from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
 
 # Caminhos exatos no GitHub / Repositório
@@ -161,7 +161,7 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste, Alinhamento e Drawer)
+# Estilização CSS Personalizada - Institucional SPAI
 st.markdown("""
     <style>
     .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
@@ -535,29 +535,60 @@ st.markdown("""
         color: #0f172a;
         line-height: 1.35;
     }
-    .drawer-doe-meta {
-        font-size: 10.5px;
-        color: #475569;
-        margin-top: 4px;
-        line-height: 1.35;
+    .drawer-doe-params {
+        background-color: #ffffff;
+        border: 1px dashed #94a3b8;
+        border-radius: 6px;
+        padding: 6px 8px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: #1e293b;
+        line-height: 1.4;
+    }
+    .drawer-doe-params strong {
+        color: #005f73;
+    }
+    .drawer-doe-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
     }
     .drawer-doe-link {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        margin-top: 7px;
         font-size: 11.5px;
         font-weight: 700;
-        color: #005f73 !important;
+        color: #ffffff !important;
         text-decoration: none !important;
+        background-color: #005f73;
+        border: 1px solid #005f73;
+        border-radius: 6px;
+        padding: 5px 10px;
+        transition: all 0.15s ease;
+    }
+    .drawer-doe-link:hover {
+        background-color: #0a9396;
+        border-color: #0a9396;
+    }
+    .drawer-copy-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #005f73;
         background-color: #e6f4f1;
         border: 1px solid #94d2bd;
         border-radius: 6px;
-        padding: 4px 10px;
+        padding: 5px 9px;
+        cursor: pointer;
+        transition: all 0.15s ease;
     }
-    .drawer-doe-link:hover {
-        background-color: #005f73;
-        color: #ffffff !important;
+    .drawer-copy-btn:hover {
+        background-color: #ccebe4;
         border-color: #005f73;
     }
     .drawer-actions {
@@ -751,8 +782,6 @@ st.markdown("""
 def carregar_base_geral():
     df = pd.read_csv(GOOGLE_SHEET_CSV_URL)
 
-    # Considera apenas linhas com dados completos nas 6 colunas principais
-    # (ID, Categoria, Região Administrativa, Município/Cidades, Tipo, Nome do Ambiente)
     qtd_cols_obrigatorias = min(6, df.shape[1])
     cols_obrigatorias = list(df.columns[:qtd_cols_obrigatorias])
 
@@ -769,7 +798,6 @@ def carregar_base_geral():
 
     df = df.reset_index(drop=True)
 
-    # Identifica explicitamente a coluna "Cidades" (ou fallback para a 4ª coluna)
     col_cidades = None
     for c in df.columns:
         if normalizar_texto(c) in {"cidades", "cidade", "municipios", "municipio"}:
@@ -853,7 +881,6 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
 # Extrai data (dd/mm/aaaa e objeto datetime) e ano a partir do texto da Resolução
 def extrair_data_resolucao(texto_resolucao):
     texto = str(texto_resolucao or "")
-    # Procura data completa dd/mm/aaaa ou dd.mm.aaaa ou dd-mm-aaaa
     m_data = re.search(r"\b(\d{1,2})[/\.-](\d{1,2})[/\.-](19\d{2}|20\d{2})\b", texto)
     if m_data:
         dia = int(m_data.group(1))
@@ -861,25 +888,24 @@ def extrair_data_resolucao(texto_resolucao):
         ano = int(m_data.group(3))
         try:
             dt = datetime(ano, mes, dia)
-            return dt, dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d"), ano
+            return dt, dt.strftime("%d/%m/%Y"), ano
         except ValueError:
             pass
 
-    # Caso tenha apenas o ano (ex: 2010 ou 2024)
     m_ano = re.search(r"\b(19\d{2}|20\d{2})\b", texto)
     if m_ano:
         ano = int(m_ano.group(1))
-        return None, None, None, ano
+        return None, None, ano
 
-    return None, None, None, None
+    return None, None, None
 
-# Monta exclusivamente a URL oficial do DOE-SP (mar/2023+) ou Imprensa Oficial (acervo < mar/2023)
-# aplicando os critérios da busca avançada (Caderno Executivo, Seção Atos Normativos, Data Personalizada)
+# Monta exclusivamente a URL oficial válida do DOE-SP (/pesquisa) ou Imprensa Oficial (acervo < mar/2023)
+# com os critérios exatos para preenchimento rápido no portal
 def montar_consulta_oficial_doe(texto_resolucao, nome_ambiente=""):
     texto_limpo = re.sub(r"\s+", " ", str(texto_resolucao or "")).strip()
     nome_limpo = re.sub(r"\s+", " ", str(nome_ambiente or "")).strip()
 
-    dt_ato, data_br, data_iso, ano = extrair_data_resolucao(texto_limpo)
+    dt_ato, data_br, ano = extrair_data_resolucao(texto_limpo)
 
     # Extrai o termo limpo do ato normativo (ex: "Resolução SD 10" ou "Resolução SCTI 15")
     match_ato = re.search(
@@ -906,51 +932,25 @@ def montar_consulta_oficial_doe(texto_resolucao, nome_ambiente=""):
         eh_acervo_historico = ano < 2023
 
     if eh_acervo_historico:
-        # Portal Histórico Oficial da Imprensa Oficial do Estado de São Paulo (edições até fev/2023)
-        params_io = {
-            "PalavrasChave": termo_pesquisa,
-            "Caderno": "Executivo",
-        }
-        if data_br:
-            params_io["DataInicio"] = data_br
-            params_io["DataFim"] = data_br
-        elif ano:
-            params_io["DataInicio"] = f"01/01/{ano}"
-            params_io["DataFim"] = f"31/12/{ano}"
-
-        url_final = f"https://www.imprensaoficial.com.br/DO/BuscaDO2001_11_2.aspx?{urlencode(params_io)}"
-        rotulo_botao = "📰 Consultar na Imprensa Oficial (Acervo Histórico) ↗"
-        periodo_hint = f"Data: {data_br}" if data_br else (f"Ano: {ano}" if ano else "Edições anteriores a mar/2023")
-        dica_filtros = f"Caderno: Executivo · Termo: \"{termo_pesquisa}\" · {periodo_hint}"
+        # Rota oficial exata da Imprensa Oficial (edições anteriores a mar/2023)
+        url_final = "https://www.imprensaoficial.com.br/DO/BuscaDO2001_11_2.aspx"
+        rotulo_botao = "📰 Abrir Imprensa Oficial (Acervo) ↗"
+        periodo_str = f"{data_br} a {data_br}" if data_br else (f"01/01/{ano} a 31/12/{ano}" if ano else "Anterior a 03/2023")
+        guia_campos = (
+            f"<strong>1. Palavra-chave:</strong> {html.escape(termo_pesquisa)}<br>"
+            f"<strong>2. Caderno:</strong> Executivo · <strong>3. Período:</strong> {periodo_str}"
+        )
     else:
-        # Novo Portal Oficial do Diário Oficial do Estado de São Paulo (doe.sp.gov.br — mar/2023 em diante)
-        if data_iso:
-            inicio_iso = data_iso
-            fim_iso = data_iso
-            periodo_hint = f"Data: {data_br} a {data_br}"
-        elif ano:
-            inicio_iso = f"{ano}-01-01"
-            fim_iso = f"{ano}-12-31"
-            periodo_hint = f"Data: 01/01/{ano} a 31/12/{ano}"
-        else:
-            inicio_iso = "2023-03-01"
-            fim_iso = datetime.now(FUSO_BRASILIA).strftime("%Y-%m-%d")
-            periodo_hint = f"Data: 01/03/2023 a {datetime.now(FUSO_BRASILIA).strftime('%d/%m/%Y')}"
+        # Rota oficial válida da Pesquisa Avançada do Novo DOE-SP (mar/2023 em diante)
+        url_final = "https://www.doe.sp.gov.br/pesquisa"
+        rotulo_botao = "📰 Abrir Diário Oficial (DOE-SP) ↗"
+        periodo_str = f"{data_br} a {data_br}" if data_br else (f"01/01/{ano} a 31/12/{ano}" if ano else "01/03/2023 em diante")
+        guia_campos = (
+            f"<strong>Termo:</strong> {html.escape(termo_pesquisa)} · <strong>Data:</strong> Personalizado ({periodo_str})<br>"
+            f"<strong>Caderno:</strong> Executivo · <strong>Seção:</strong> Atos Normativos · <strong>Estrutura:</strong> SCTI"
+        )
 
-        params_doe = {
-            "q": termo_pesquisa,
-            "data": "Personalizado",
-            "inicio": inicio_iso,
-            "fim": fim_iso,
-            "caderno": "Executivo",
-            "secao": "Atos Normativos",
-            "ordenacao": "Por Data",
-        }
-        url_final = f"https://www.doe.sp.gov.br/busca?{urlencode(params_doe)}"
-        rotulo_botao = "📰 Consultar no Diário Oficial (DOE-SP) ↗"
-        dica_filtros = f"Caderno: Executivo · Seção: Atos Normativos · {periodo_hint}"
-
-    return url_final, rotulo_botao, dica_filtros
+    return url_final, rotulo_botao, termo_pesquisa, guia_campos
 
 # Extrai o texto da Resolução de Credenciamento e a URL oficial correspondente
 def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
@@ -987,11 +987,11 @@ def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
                         url_direta = f"https://{val}"
                         break
 
-    url_oficial, rotulo_botao, dica_filtros = montar_consulta_oficial_doe(texto_resolucao, nome_ambiente)
+    url_oficial, rotulo_botao, termo_pesquisa, guia_campos = montar_consulta_oficial_doe(texto_resolucao, nome_ambiente)
     if url_direta:
         url_oficial = url_direta
 
-    return texto_resolucao, url_oficial, rotulo_botao, dica_filtros
+    return texto_resolucao, url_oficial, rotulo_botao, termo_pesquisa, guia_campos
 
 # Monta o dicionário completo de informações do ambiente selecionado (mapa ou lista)
 def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
@@ -1005,7 +1005,7 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
     site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
     contato_env = extrair_campo_opcional(row_sel, ["email", "e-mail", "telefone", "fone", "whatsapp", "contato"], somente_email_ou_fone=True)
-    resolucao_txt, resolucao_url, resolucao_btn_lbl, resolucao_dica = extrair_resolucao_e_link_doe(row_sel, nome_env)
+    resolucao_txt, resolucao_url, resolucao_btn_lbl, resolucao_termo, resolucao_guia = extrair_resolucao_e_link_doe(row_sel, nome_env)
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -1022,7 +1022,8 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
         "resolucao_txt": resolucao_txt,
         "resolucao_url": resolucao_url,
         "resolucao_btn_lbl": resolucao_btn_lbl,
-        "resolucao_dica": resolucao_dica,
+        "resolucao_termo": resolucao_termo,
+        "resolucao_guia": resolucao_guia,
         "verticais": v_env,
         "segmentos": s_env,
     }
@@ -1065,11 +1066,19 @@ def renderizar_drawer_detalhes(dados):
     tipo_esc = html.escape(dados["tipo"])
     cat_esc = html.escape(dados["categoria"])
 
-    # Bloco da Resolução de Credenciamento + Link Oficial Exclusivo (DOE-SP ou Imprensa Oficial)
+    # Bloco da Resolução de Credenciamento + Link Oficial Exclusivo (DOE-SP ou Imprensa Oficial) + Copiar Termo
     res_txt = dados.get("resolucao_txt", "").strip()
     url_oficial_esc = html.escape(dados.get("resolucao_url", ""), quote=True)
-    btn_lbl_esc = html.escape(dados.get("resolucao_btn_lbl", "📰 Consultar no Diário Oficial ↗"))
-    dica_esc = html.escape(dados.get("resolucao_dica", ""))
+    btn_lbl_esc = html.escape(dados.get("resolucao_btn_lbl", "📰 Abrir Diário Oficial ↗"))
+    termo_esc = html.escape(dados.get("resolucao_termo", ""), quote=True)
+    guia_html = dados.get("resolucao_guia", "")
+
+    copy_btn_html = (
+        f'<button type="button" class="drawer-copy-btn" data-copy="{termo_esc}" '
+        f'onclick="navigator.clipboard.writeText(this.dataset.copy);'
+        f'const orig=this.innerText;this.innerText=\'✓ Termo copiado!\';'
+        f'setTimeout(()=>this.innerText=orig,2000);">📋 Copiar termo</button>'
+    )
 
     if res_txt:
         res_txt_esc = html.escape(res_txt)
@@ -1077,26 +1086,32 @@ def renderizar_drawer_detalhes(dados):
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
             f'<div class="drawer-resolucao-box">'
             f'<div class="drawer-resolucao-txt">{res_txt_esc}</div>'
-            f'<div class="drawer-doe-meta">{dica_esc}</div>'
+            f'<div class="drawer-doe-params">{guia_html}</div>'
+            f'<div class="drawer-doe-actions">'
             f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
+            f'{copy_btn_html}'
+            f'</div>'
             f'</div>'
         )
     else:
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
-            f'<div class="drawer-value"><i>Não informada na planilha.</i><br>'
+            f'<div class="drawer-value"><i>Não informada na planilha.</i>'
+            f'<div class="drawer-doe-actions">'
             f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
+            f'{copy_btn_html}'
+            f'</div>'
             f'</div>'
         )
 
-    # Link de Site (ou busca institucional caso não haja URL na coluna)
+    # Link de Site
     site_raw = dados["site"].strip()
     if site_raw:
         site_url = site_raw if site_raw.startswith(("http://", "https://")) else f"https://{site_raw}"
     else:
         site_url = f"https://www.google.com/search?q={quote(dados['nome'] + ' ' + dados['municipio'])}"
 
-    # Link de Contato (mailto se e-mail, tel se telefone, ou pesquisa de contato oficial)
+    # Link de Contato
     contato_raw = dados["contato"].strip()
     if "@" in contato_raw:
         contato_url = f"mailto:{contato_raw}"
@@ -1120,7 +1135,6 @@ def renderizar_drawer_detalhes(dados):
             st.session_state["ambiente_drawer_selecionado"] = None
             st.rerun()
 
-    # HTML em linha única sem indentação para evitar que o Markdown do Streamlit o trate como bloco de código
     html_drawer = (
         f'<div class="drawer-panel">'
         f'<div class="drawer-badge-row">'
@@ -1168,11 +1182,9 @@ for _, r in df_spai.iterrows():
 # BARRA LATERAL - NAVEGAÇÃO ENTRE PAINÉIS
 # ----------------------------------------------------
 
-# Logo do CTI exibido no TOPO da barra lateral
 if os.path.exists(CAMINHO_CTI):
     st.sidebar.image(CAMINHO_CTI, width='stretch')
 
-# Logo Horizontal do SPAI (posicionado abaixo do logo do CTI)
 if os.path.exists(CAMINHO_LOGO_HORIZONTAL):
     st.sidebar.image(CAMINHO_LOGO_HORIZONTAL, width='stretch')
 
@@ -1184,7 +1196,6 @@ painel_selecionado = st.sidebar.radio(
 
 st.sidebar.markdown("---")
 
-# Link para o Mapeamento 2025
 st.sidebar.markdown("📄 [**Acesse o Mapeamento de Ambientes de Inovação de São Paulo Ano-Base 2025**](https://drive.google.com/file/d/1cKcB8jkSQFSbfMoMK-bQAOCEo_NPZiX_/view?usp=sharing)")
 
 st.sidebar.info("""
@@ -1198,18 +1209,16 @@ Incentivar investimentos em inovação, fortalecer a pesquisa científica e cone
 🔗 [Saiba mais no site oficial da SCTI](https://www.inovacao.sp.gov.br/sec_tecnologia_inovacao/programas/spai)
 """)
 
-# Caixa de texto "Colaboradores:" exibida logo acima do logo do Projeto Japi
 st.sidebar.markdown("**Colaboradores:**")
 
 if os.path.exists(CAMINHO_LOGO_JAPI):
     st.sidebar.image(CAMINHO_LOGO_JAPI, width='stretch')
 
-# Função para renderização de painel fato com Grade de Cards (Top 2 + até 8 cards abaixo)
+# Função para renderização de painel fato com Grade de Cards
 def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceitual):
     st.title(f"{item_plural}")
     st.caption(f"Mapeamento e distribuição de {item_plural.lower()} nos ambientes de inovação de São Paulo")
 
-    # Bloco Explicativo do Significado Prático
     st.markdown(f"""
     <div class="concept-card">
         <div class="concept-title">💡 Significado Prático para Inovação e Empreendedorismo</div>
@@ -1245,7 +1254,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         col_nome = encontrar_coluna(["nome", "ambiente", "instituição", "instituicao"]) or (cols[1] if len(cols) > 1 else cols[0])
         col_atuacao = encontrar_coluna(["vertical", "segmento", "área", "area", "atuação", "atuacao"]) or cols[-1]
 
-        # Enriquecimento com os dados cruzados da Base Geral SPAI
         df_base = df_fato.copy()
 
         def extrair_dado_spai(row, propriedade):
@@ -1260,9 +1268,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         df_base["SPAI_Municipio"] = df_base.apply(lambda r: extrair_dado_spai(r, "Municipio"), axis=1)
         df_base["SPAI_Tipo"] = df_base.apply(lambda r: extrair_dado_spai(r, "Tipo"), axis=1)
 
-        # ----------------------------------------------------
-        # FILTROS CENTRALIZADOS NA PÁGINA
-        # ----------------------------------------------------
         st.markdown("<h4 style='text-align: center; color: #005f73; margin-bottom: 12px;'>🔍 Filtros de Ambientes</h4>", unsafe_allow_html=True)
 
         cats_unicas = [c for c in df_base["SPAI_Categoria"].unique() if c != ""]
@@ -1281,7 +1286,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if cat_sel and cat_sel != "Todas":
             df_filt_f = df_filt_f[df_filt_f["SPAI_Categoria"] == cat_sel]
 
-        # Dropdowns Secundários
         f_cols = st.columns(4)
 
         atuacao_list = ["Todos"] + sorted([a for a in df_filt_f[col_atuacao].dropna().astype(str).str.strip().unique() if a != ""])
@@ -1306,9 +1310,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
         st.markdown("---")
 
-        # ----------------------------------------------------
-        # LINHA SUPERIOR DE CARDS KPI
-        # ----------------------------------------------------
         total_amb = df_filt_f[col_nome].nunique()
         total_items = df_filt_f[col_atuacao].nunique()
         total_muns = df_filt_f["SPAI_Municipio"].replace("", None).dropna().nunique()
@@ -1324,9 +1325,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 
         st.markdown("---")
 
-        # ----------------------------------------------------
-        # GRADE DE CARDS (TOP 2 EM DESTAQUE + ATÉ 8 CARDS ABAIXO = MÁXIMO 10)
-        # ----------------------------------------------------
         st.subheader(f"📊 Distribuição por {titulo_item}")
 
         df_dist = df_filt_f.groupby(col_atuacao)[col_nome].nunique().reset_index()
@@ -1336,7 +1334,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
         if not df_dist.empty:
             total_ocorrencias = df_dist["Quantidade de Ambientes"].sum()
 
-            # Garante no máximo 10 cards (agrupando excedentes em "Outros" quando houver > 10)
             if len(df_dist) > 10:
                 top9 = df_dist.iloc[:9].copy()
                 outros_qtd = df_dist.iloc[9:]["Quantidade de Ambientes"].sum()
@@ -1350,7 +1347,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
             top2_df = df_cards.iloc[:2]
             restante_df = df_cards.iloc[2:10]
 
-            # Primeira Linha: Top 2 Cards em Destaque
             html_cards = '<div class="dist-grid-top">'
             for _, row in top2_df.iterrows():
                 nome_cat = str(row[titulo_item]).strip()
@@ -1373,7 +1369,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
                 )
             html_cards += '</div>'
 
-            # Linhas Abaixo: Demais Cards (até 8 cards em grade de 4 colunas)
             if not restante_df.empty:
                 html_cards += '<div class="dist-grid-sub">'
                 for _, row in restante_df.iterrows():
@@ -1404,7 +1399,6 @@ def renderizar_painel_fato(df_fato, titulo_item, item_plural, explicacao_conceit
 # PAINEL 1: VISÃO GERAL
 # ====================================================
 if painel_selecionado == "Visão Geral":
-    # Exibição do Logo SPAI Vertical no tamanho máximo
     if os.path.exists(CAMINHO_LOGO_SPAI_VERTICAL):
         st.image(CAMINHO_LOGO_SPAI_VERTICAL, width='stretch')
     else:
@@ -1420,7 +1414,6 @@ if painel_selecionado == "Visão Geral":
     else:
         plenos, associados = 0, 0
 
-    # Contagem distinta de municípios com base na coluna 'Cidades'
     col_cidades_vg = None
     for c in df_spai.columns:
         if normalizar_texto(c) in {"cidades", "cidade", "municipios", "municipio"}:
@@ -1510,7 +1503,6 @@ if painel_selecionado == "Visão Geral":
     with btn_f:
         st.button("↺ Limpar filtros", key="btn_limpar_filtros_vg", on_click=resetar_filtros_vg, use_container_width=True)
 
-    # Linha Única de Controles Principais alinhada na base: Tipo de Membro | Região Administrativa | Município
     f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4], vertical_alignment="bottom")
 
     with f_col1:
@@ -1553,7 +1545,6 @@ if painel_selecionado == "Visão Geral":
     elif "Associados" in str(tipo_sel_display) and df_por_tipo.shape[1] > 4:
         df_por_tipo = df_por_tipo[df_por_tipo.iloc[:, 4].astype(str).str.strip().str.title() == "Associado"]
 
-    # Calcula contagens dinâmicas por Categoria para exibir nos botões (ex: Parques Tecnológicos (24))
     cats_series = df_por_tipo.iloc[:, 1].apply(formatar_categoria_exibicao)
     contagem_cats = cats_series[cats_series != ""].value_counts().to_dict()
     cats_ordenadas = ordenar_categorias_prioritarias(list(contagem_cats.keys()))
@@ -1566,7 +1557,6 @@ if painel_selecionado == "Visão Geral":
         opcoes_categorias_display.append(lbl_c)
         mapa_label_para_cat[lbl_c] = c
 
-    # Garante que a seleção atual continue válida mesmo após trocar o Tipo de Membro
     cat_atual_limpa = mapa_label_para_cat.get(st.session_state["cat_pills_vg"], "Todas")
     if cat_atual_limpa == "Todas":
         st.session_state["cat_pills_vg"] = "Todas"
@@ -1594,7 +1584,6 @@ if painel_selecionado == "Visão Geral":
             st.session_state["cidade_sel_vg"] = "Todas"
         cidade_sel = st.selectbox("Município", cidades_unicas, key="cidade_sel_vg")
 
-    # Linha Subordinada: Pills de Formato / Categoria com Contadores Dinâmicos
     st.markdown("<div style='font-size:12.5px; font-weight:700; color:#475569; margin: 10px 0 6px 0; line-height:1.4;'>Formato do Ambiente (filtrado pelo tipo acima):</div>", unsafe_allow_html=True)
     if hasattr(st, "pills"):
         cat_sel_display = st.pills(
@@ -1615,7 +1604,6 @@ if painel_selecionado == "Visão Geral":
 
     cat_sel = mapa_label_para_cat.get(cat_sel_display, "Todas")
 
-    # Aplica filtros finais sobre df_spai
     df_filt = df_por_tipo.copy()
     if cat_sel != "Todas":
         df_filt = df_filt[df_filt.iloc[:, 1].apply(formatar_categoria_exibicao) == cat_sel]
@@ -1627,7 +1615,6 @@ if painel_selecionado == "Visão Geral":
     col_id_orig = df_filt.columns[0]
     col_nome_orig = df_filt.columns[5] if df_filt.shape[1] > 5 else df_filt.columns[0]
 
-    # Filtro de Busca Textual Rápida (aplicado tanto à lista quanto ao mapa)
     termo_busca = st.session_state.get("busca_nome_vg", "").strip()
     if termo_busca:
         termo_norm = normalizar_texto(termo_busca)
@@ -1657,7 +1644,6 @@ if painel_selecionado == "Visão Geral":
         df_m = df_m.dropna(subset=["Lat", "Lon"]).reset_index(drop=True)
 
         if not df_m.empty:
-            # Adiciona colunas formatadas para tooltip limpo no mapa
             df_m["_Categoria_Fmt"] = df_m.iloc[:, 1].apply(formatar_categoria_exibicao) if df_m.shape[1] > 1 else ""
             df_m["_Regiao_Fmt"] = df_m.iloc[:, 2].astype(str).str.strip() if df_m.shape[1] > 2 else ""
             df_m["_Municipio_Fmt"] = df_m.iloc[:, 3].astype(str).str.strip() if df_m.shape[1] > 3 else ""
@@ -1698,7 +1684,6 @@ if painel_selecionado == "Visão Geral":
                 uirevision=f"{regiao_sel}_{cidade_sel}_{termo_busca}",
             )
 
-            # Destaca em laranja o pino se o ambiente estiver aberto no drawer
             nome_ativo = drawer_ativo["nome"] if drawer_ativo else ""
             cores_pinos = [
                 "#e85d04" if str(n).strip() == nome_ativo else "#005f73"
@@ -1721,7 +1706,6 @@ if painel_selecionado == "Visão Geral":
             st.warning("⚠️ Nenhum ambiente com coordenadas mapeadas encontrado para os filtros aplicados.")
 
     with col_l:
-        # Campo de busca textual acima da lista
         st.text_input(
             label="Buscar ambiente",
             placeholder="🔎 Buscar ambiente por nome (ex: SUPERA, Inova)...",
@@ -1738,7 +1722,6 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-        # Lista rolável compacta usando Markdown nativo (`Ver ficha ➔`) renderizado como badge <code>
         with st.container(height=440, border=True):
             if df_filt.empty:
                 st.info("Nenhum ambiente corresponde à busca atual.")
@@ -1757,7 +1740,6 @@ if painel_selecionado == "Visão Geral":
                         )
                         st.rerun()
 
-    # Verifica clique em marcador do mapa para abrir/atualizar o Drawer lateral
     pontos_mapa = []
     if map_event and isinstance(map_event, dict) and "selection" in map_event:
         pontos_mapa = map_event["selection"].get("points", [])
@@ -1775,7 +1757,6 @@ if painel_selecionado == "Visão Geral":
                 )
                 st.rerun()
 
-    # Renderiza o Painel Lateral Sobreposto (Drawer) à direita quando um ambiente está selecionado
     if col_drawer is not None and st.session_state.get("ambiente_drawer_selecionado") is not None:
         with col_drawer:
             renderizar_drawer_detalhes(st.session_state["ambiente_drawer_selecionado"])
