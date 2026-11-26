@@ -287,7 +287,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa Compacta de Ambientes (elimina o gap padrão de 1rem do Streamlit) */
+    /* Lista Interativa Compacta de Ambientes com Badge de Ação (➔) à Direita */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         padding: 6px 8px !important;
     }
@@ -298,30 +298,65 @@ st.markdown("""
         margin: 0 !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
         justify-content: space-between !important;
         text-align: left !important;
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
-        border-radius: 7px !important;
-        padding: 6px 11px !important;
-        min-height: 34px !important;
+        border-left: 3px solid #94d2bd !important;
+        border-radius: 8px !important;
+        padding: 7px 10px 7px 12px !important;
+        min-height: 36px !important;
         height: auto !important;
         line-height: 1.25 !important;
         font-size: 12.5px !important;
         font-weight: 600 !important;
         color: #0f172a !important;
-        transition: all 0.12s ease !important;
+        cursor: pointer !important;
+        transition: all 0.14s ease !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button > div {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button p {
         font-size: 12.5px !important;
         line-height: 1.25 !important;
         margin: 0 !important;
+        text-align: left !important;
+        flex: 1 1 auto !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button::after {
+        content: "➔" !important;
+        flex-shrink: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 999px !important;
+        background-color: #e6f4f1 !important;
+        color: #005f73 !important;
+        font-size: 13px !important;
+        font-weight: 800 !important;
+        transition: all 0.15s ease !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button:hover {
         background-color: #f0fdfa !important;
         border-color: #0a9396 !important;
+        border-left-color: #005f73 !important;
         color: #005f73 !important;
-        transform: translateX(2px);
+        box-shadow: 0 2px 6px rgba(0, 95, 115, 0.12) !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button:hover::after {
+        background-color: #005f73 !important;
+        color: #ffffff !important;
+        transform: translateX(2px) !important;
     }
 
     /* Painel Lateral Sobreposto (Drawer) */
@@ -1380,7 +1415,7 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-        # Lista rolável compacta (1 elemento por linha, sem divs extras que criam lacunas)
+        # Lista rolável compacta com badge de seta (➔) estilizado via CSS à direita
         with st.container(height=435, border=True):
             if df_filt.empty:
                 st.info("Nenhum ambiente corresponde à busca atual.")
@@ -1388,7 +1423,7 @@ if painel_selecionado == "Visão Geral":
                 for idx_row, row_item in df_filt.iterrows():
                     nome_item = str(row_item[col_nome_orig]).strip()
                     mun_item = str(row_item.iloc[3]).strip() if df_filt.shape[1] > 3 else ""
-                    rotulo_botao = f"{nome_item}  ·  {mun_item}   ›" if mun_item else f"{nome_item}   ›"
+                    rotulo_botao = f"{nome_item}  ·  {mun_item}" if mun_item else nome_item
 
                     if st.button(rotulo_botao, key=f"env_btn_{idx_row}_{nome_item}", use_container_width=True):
                         st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
@@ -1468,8 +1503,9 @@ if painel_selecionado == "Visão Geral":
                     botoes.forEach(btn => {{
                         if (btn.dataset.hoverBound === '1') return;
                         btn.dataset.hoverBound = '1';
-                        const textoCompleto = (btn.innerText || btn.textContent || '').trim();
-                        const nomeEnv = textoCompleto.split('  ·  ')[0].replace(/\\s*›\\s*$/, '').trim();
+                        const pEl = btn.querySelector('p');
+                        const textoCompleto = ((pEl ? pEl.innerText : btn.innerText) || '').trim();
+                        const nomeEnv = textoCompleto.split('  ·  ')[0].trim();
                         btn.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
                         btn.addEventListener('mouseleave', () => destacarPinoMapa(null));
                     }});
