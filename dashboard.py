@@ -7,7 +7,7 @@ import re
 import json
 import html
 import unicodedata
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 from datetime import datetime, timezone, timedelta
 
 # Caminhos exatos no GitHub / Repositório
@@ -23,6 +23,9 @@ FUSO_BRASILIA = timezone(timedelta(hours=-3))
 
 # Paleta de Cores Institucionais SPAI / SCTI-SP
 PALETA_SPAI_ESCALA = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
+
+# Data de corte entre o Acervo Histórico (Imprensa Oficial) e o Novo Portal DOE-SP
+DATA_CORTE_NOVO_DOE = datetime(2023, 3, 1)
 
 # Função para normalizar strings (remove acentos, maiúsculas e espaços extras)
 def normalizar_texto(txt):
@@ -313,7 +316,7 @@ st.markdown("""
         opacity: 1;
     }
 
-    /* Segmented Control (Nível 1 - Tipo de Membro) com Alto Contraste e Altura Alinhada aos Selects */
+    /* Segmented Control (Nível 1 - Tipo de Membro) */
     div[data-testid="stSegmentedControl"] {
         background-color: #f1f5f9 !important;
         padding: 3px !important;
@@ -344,7 +347,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Pills (Nível 2 - Subcategorias) com Contraste Sólido no Estado Ativo */
+    /* Pills (Nível 2 - Subcategorias) */
     div[data-testid="stPills"] {
         margin-top: 2px !important;
         margin-bottom: 6px !important;
@@ -380,7 +383,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa Compacta de Ambientes - Alinhamento Uniforme à Esquerda + Badge na Extremidade Direita */
+    /* Lista Interativa Compacta de Ambientes */
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
         gap: 6px !important;
     }
@@ -523,7 +526,7 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-left: 3.5px solid #005f73;
         border-radius: 7px;
-        padding: 8px 10px;
+        padding: 9px 11px;
         margin-top: 4px;
     }
     .drawer-resolucao-txt {
@@ -532,47 +535,30 @@ st.markdown("""
         color: #0f172a;
         line-height: 1.35;
     }
-    .drawer-doe-links-wrap {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
+    .drawer-doe-meta {
+        font-size: 10.5px;
+        color: #475569;
+        margin-top: 4px;
+        line-height: 1.35;
     }
     .drawer-doe-link {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        font-size: 11px;
+        margin-top: 7px;
+        font-size: 11.5px;
         font-weight: 700;
         color: #005f73 !important;
         text-decoration: none !important;
         background-color: #e6f4f1;
         border: 1px solid #94d2bd;
         border-radius: 6px;
-        padding: 3px 8px;
+        padding: 4px 10px;
     }
     .drawer-doe-link:hover {
         background-color: #005f73;
         color: #ffffff !important;
         border-color: #005f73;
-    }
-    .drawer-doe-link-alt {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        font-weight: 700;
-        color: #1e293b !important;
-        text-decoration: none !important;
-        background-color: #f1f5f9;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        padding: 3px 8px;
-    }
-    .drawer-doe-link-alt:hover {
-        background-color: #1e293b;
-        color: #ffffff !important;
-        border-color: #1e293b;
     }
     .drawer-actions {
         display: flex;
@@ -864,40 +850,109 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
                 return val
     return ""
 
-# Gera URLs diretas de consulta ao Diário Oficial (portal nativo DOE-SP + busca aberta no Google sem operadores restritivos)
-def montar_urls_pesquisa_doe(texto_resolucao, nome_ambiente=""):
+# Extrai data (dd/mm/aaaa e objeto datetime) e ano a partir do texto da Resolução
+def extrair_data_resolucao(texto_resolucao):
+    texto = str(texto_resolucao or "")
+    # Procura data completa dd/mm/aaaa ou dd.mm.aaaa ou dd-mm-aaaa
+    m_data = re.search(r"\b(\d{1,2})[/\.-](\d{1,2})[/\.-](19\d{2}|20\d{2})\b", texto)
+    if m_data:
+        dia = int(m_data.group(1))
+        mes = int(m_data.group(2))
+        ano = int(m_data.group(3))
+        try:
+            dt = datetime(ano, mes, dia)
+            return dt, dt.strftime("%d/%m/%Y"), dt.strftime("%Y-%m-%d"), ano
+        except ValueError:
+            pass
+
+    # Caso tenha apenas o ano (ex: 2010 ou 2024)
+    m_ano = re.search(r"\b(19\d{2}|20\d{2})\b", texto)
+    if m_ano:
+        ano = int(m_ano.group(1))
+        return None, None, None, ano
+
+    return None, None, None, None
+
+# Monta exclusivamente a URL oficial do DOE-SP (mar/2023+) ou Imprensa Oficial (acervo < mar/2023)
+# aplicando os critérios da busca avançada (Caderno Executivo, Seção Atos Normativos, Data Personalizada)
+def montar_consulta_oficial_doe(texto_resolucao, nome_ambiente=""):
     texto_limpo = re.sub(r"\s+", " ", str(texto_resolucao or "")).strip()
     nome_limpo = re.sub(r"\s+", " ", str(nome_ambiente or "")).strip()
 
-    match_ano = re.search(r"\b(19\d{2}|20\d{2})\b", texto_limpo)
-    ano = match_ano.group(1) if match_ano else ""
+    dt_ato, data_br, data_iso, ano = extrair_data_resolucao(texto_limpo)
 
+    # Extrai o termo limpo do ato normativo (ex: "Resolução SD 10" ou "Resolução SCTI 15")
     match_ato = re.search(
         r"(Resolu[çc][ãa]o|Decreto|Portaria|Delibera[çc][ãa]o)\s+([A-ZÀ-Ú]{2,12})\s*(?:n[º°o\.]*\s*)?(\d+)",
         texto_limpo,
         flags=re.IGNORECASE,
     )
-
     if match_ato:
         tipo_ato = match_ato.group(1).capitalize()
         sigla_orgao = match_ato.group(2).upper()
         num_ato = match_ato.group(3)
-        termo_doe_nativo = f"{tipo_ato} {sigla_orgao} {num_ato} {ano}".strip()
-        termo_google = f'"{tipo_ato} {sigla_orgao}" {num_ato} {ano} São Paulo'.strip()
+        termo_pesquisa = f"{tipo_ato} {sigla_orgao} {num_ato}"
     elif texto_limpo:
-        sem_pont = re.sub(r"\bn[º°o\.]+\s*", "", texto_limpo, flags=re.IGNORECASE)
-        sem_data_ext = re.sub(r"\bde\s+\d{1,2}[/\.-]\d{1,2}[/\.-](19\d{2}|20\d{2})", r" \1", sem_pont, flags=re.IGNORECASE)
-        termo_doe_nativo = sem_data_ext.strip()
-        termo_google = f"{sem_data_ext.strip()} São Paulo"
+        termo_pesquisa = re.sub(r"\bn[º°o\.]+\s*", "", texto_limpo, flags=re.IGNORECASE)
+        termo_pesquisa = re.sub(r"\bde\s+\d{1,2}[/\.-]\d{1,2}[/\.-](19\d{2}|20\d{2})", "", termo_pesquisa, flags=re.IGNORECASE).strip()
     else:
-        termo_doe_nativo = f"{nome_limpo} SPAI".strip()
-        termo_google = f'"{nome_limpo}" SPAI São Paulo'
+        termo_pesquisa = nome_limpo or "SPAI"
 
-    url_doe_nativo = f"https://www.doe.sp.gov.br/busca?q={quote(termo_doe_nativo)}"
-    url_google_aberto = f"https://www.google.com/search?q={quote(termo_google)}"
-    return url_doe_nativo, url_google_aberto
+    # Decide entre Novo Portal DOE-SP (>= 01/03/2023) e Acervo Histórico Imprensa Oficial (< 01/03/2023)
+    eh_acervo_historico = False
+    if dt_ato is not None:
+        eh_acervo_historico = dt_ato < DATA_CORTE_NOVO_DOE
+    elif ano is not None:
+        eh_acervo_historico = ano < 2023
 
-# Extrai o texto da Resolução de Credenciamento e as URLs correspondentes
+    if eh_acervo_historico:
+        # Portal Histórico Oficial da Imprensa Oficial do Estado de São Paulo (edições até fev/2023)
+        params_io = {
+            "PalavrasChave": termo_pesquisa,
+            "Caderno": "Executivo",
+        }
+        if data_br:
+            params_io["DataInicio"] = data_br
+            params_io["DataFim"] = data_br
+        elif ano:
+            params_io["DataInicio"] = f"01/01/{ano}"
+            params_io["DataFim"] = f"31/12/{ano}"
+
+        url_final = f"https://www.imprensaoficial.com.br/DO/BuscaDO2001_11_2.aspx?{urlencode(params_io)}"
+        rotulo_botao = "📰 Consultar na Imprensa Oficial (Acervo Histórico) ↗"
+        periodo_hint = f"Data: {data_br}" if data_br else (f"Ano: {ano}" if ano else "Edições anteriores a mar/2023")
+        dica_filtros = f"Caderno: Executivo · Termo: \"{termo_pesquisa}\" · {periodo_hint}"
+    else:
+        # Novo Portal Oficial do Diário Oficial do Estado de São Paulo (doe.sp.gov.br — mar/2023 em diante)
+        if data_iso:
+            inicio_iso = data_iso
+            fim_iso = data_iso
+            periodo_hint = f"Data: {data_br} a {data_br}"
+        elif ano:
+            inicio_iso = f"{ano}-01-01"
+            fim_iso = f"{ano}-12-31"
+            periodo_hint = f"Data: 01/01/{ano} a 31/12/{ano}"
+        else:
+            inicio_iso = "2023-03-01"
+            fim_iso = datetime.now(FUSO_BRASILIA).strftime("%Y-%m-%d")
+            periodo_hint = f"Data: 01/03/2023 a {datetime.now(FUSO_BRASILIA).strftime('%d/%m/%Y')}"
+
+        params_doe = {
+            "q": termo_pesquisa,
+            "data": "Personalizado",
+            "inicio": inicio_iso,
+            "fim": fim_iso,
+            "caderno": "Executivo",
+            "secao": "Atos Normativos",
+            "ordenacao": "Por Data",
+        }
+        url_final = f"https://www.doe.sp.gov.br/busca?{urlencode(params_doe)}"
+        rotulo_botao = "📰 Consultar no Diário Oficial (DOE-SP) ↗"
+        dica_filtros = f"Caderno: Executivo · Seção: Atos Normativos · {periodo_hint}"
+
+    return url_final, rotulo_botao, dica_filtros
+
+# Extrai o texto da Resolução de Credenciamento e a URL oficial correspondente
 def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
     texto_resolucao = ""
@@ -918,7 +973,7 @@ def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
                     texto_resolucao = val
                 break
 
-    # 2. Caso exista coluna dedicada de link do Diário Oficial / Resolução
+    # 2. Caso exista coluna dedicada de link oficial do DOE / Imprensa Oficial
     if not url_direta:
         for col in row.index:
             c_norm = normalizar_texto(col)
@@ -932,11 +987,11 @@ def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
                         url_direta = f"https://{val}"
                         break
 
-    url_doe_nativo, url_google_aberto = montar_urls_pesquisa_doe(texto_resolucao, nome_ambiente)
+    url_oficial, rotulo_botao, dica_filtros = montar_consulta_oficial_doe(texto_resolucao, nome_ambiente)
     if url_direta:
-        url_doe_nativo = url_direta
+        url_oficial = url_direta
 
-    return texto_resolucao, url_doe_nativo, url_google_aberto
+    return texto_resolucao, url_oficial, rotulo_botao, dica_filtros
 
 # Monta o dicionário completo de informações do ambiente selecionado (mapa ou lista)
 def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
@@ -950,7 +1005,7 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
     site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
     contato_env = extrair_campo_opcional(row_sel, ["email", "e-mail", "telefone", "fone", "whatsapp", "contato"], somente_email_ou_fone=True)
-    resolucao_txt, resolucao_url_doe, resolucao_url_google = extrair_resolucao_e_link_doe(row_sel, nome_env)
+    resolucao_txt, resolucao_url, resolucao_btn_lbl, resolucao_dica = extrair_resolucao_e_link_doe(row_sel, nome_env)
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -965,8 +1020,9 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
         "site": site_env,
         "contato": contato_env,
         "resolucao_txt": resolucao_txt,
-        "resolucao_url_doe": resolucao_url_doe,
-        "resolucao_url_google": resolucao_url_google,
+        "resolucao_url": resolucao_url,
+        "resolucao_btn_lbl": resolucao_btn_lbl,
+        "resolucao_dica": resolucao_dica,
         "verticais": v_env,
         "segmentos": s_env,
     }
@@ -1001,7 +1057,7 @@ def calcular_enquadramento_mapa(df_pontos, filtro_regional_ativo=False):
 
     return centro, zoom
 
-# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, resolução DOE-SP, endereço, site e contato
+# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, resolução oficial (DOE-SP / Imprensa Oficial), endereço, site e contato
 def renderizar_drawer_detalhes(dados):
     endereco_esc = html.escape(dados["endereco"]) if dados["endereco"] else f"{html.escape(dados['municipio'])} — RA de {html.escape(dados['regiao'])}, SP"
     regiao_esc = html.escape(dados["regiao"])
@@ -1009,10 +1065,11 @@ def renderizar_drawer_detalhes(dados):
     tipo_esc = html.escape(dados["tipo"])
     cat_esc = html.escape(dados["categoria"])
 
-    # Bloco da Resolução de Credenciamento + Links diretos (Portal DOE-SP e Busca Aberta)
+    # Bloco da Resolução de Credenciamento + Link Oficial Exclusivo (DOE-SP ou Imprensa Oficial)
     res_txt = dados.get("resolucao_txt", "").strip()
-    url_doe = html.escape(dados.get("resolucao_url_doe", ""), quote=True)
-    url_google = html.escape(dados.get("resolucao_url_google", ""), quote=True)
+    url_oficial_esc = html.escape(dados.get("resolucao_url", ""), quote=True)
+    btn_lbl_esc = html.escape(dados.get("resolucao_btn_lbl", "📰 Consultar no Diário Oficial ↗"))
+    dica_esc = html.escape(dados.get("resolucao_dica", ""))
 
     if res_txt:
         res_txt_esc = html.escape(res_txt)
@@ -1020,20 +1077,15 @@ def renderizar_drawer_detalhes(dados):
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
             f'<div class="drawer-resolucao-box">'
             f'<div class="drawer-resolucao-txt">{res_txt_esc}</div>'
-            f'<div class="drawer-doe-links-wrap">'
-            f'<a href="{url_doe}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">📰 Consultar no Diário Oficial ↗</a>'
-            f'<a href="{url_google}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link-alt">🔎 Buscar no Google ↗</a>'
-            f'</div>'
+            f'<div class="drawer-doe-meta">{dica_esc}</div>'
+            f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
             f'</div>'
         )
     else:
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
-            f'<div class="drawer-value"><i>Não informada na planilha.</i>'
-            f'<div class="drawer-doe-links-wrap">'
-            f'<a href="{url_doe}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">📰 Buscar no DOE-SP ↗</a>'
-            f'<a href="{url_google}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link-alt">🔎 Buscar no Google ↗</a>'
-            f'</div>'
+            f'<div class="drawer-value"><i>Não informada na planilha.</i><br>'
+            f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
             f'</div>'
         )
 
