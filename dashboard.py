@@ -1402,25 +1402,19 @@ if painel_selecionado == "Visão Geral":
     f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4], vertical_alignment="bottom")
 
     with f_col1:
-        tooltip_tipo_membro = (
-            "Membros plenos são ambientes de inovação geridos por organizações sem fins lucrativos ou públicas. "
-            "Eles podem receber recursos do Governo do Estado por meio de convênios e termos de fomento.&#10;&#10;"
-            "Membros associados são ambientes de inovação geridos por organizações privadas com fins lucrativos. "
-            "Embora não possam receber recursos orçamentários, eles podem participar em editais de financiamento e programas de capacitação."
-        )
         html_tipo_hdr = (
-            f'<div class="tipo-membro-hdr">'
-            f'<span>Tipo de Membro</span>'
-            f'<span class="help-tip-wrap">'
-            f'<span class="help-tip-btn" tabindex="0" title="{tooltip_tipo_membro}" aria-label="Explicação sobre Tipo de Membro">?</span>'
-            f'<div class="help-tip-popover" role="tooltip">'
-            f'<p><strong>Membros plenos</strong> são ambientes de inovação geridos por organizações sem fins lucrativos ou públicas. '
-            f'Eles podem receber recursos do Governo do Estado por meio de convênios e termos de fomento.</p>'
-            f'<p><strong>Membros associados</strong> são ambientes de inovação geridos por organizações privadas com fins lucrativos. '
-            f'Embora não possam receber recursos orçamentários, eles podem participar em editais de financiamento e programas de capacitação.</p>'
-            f'</div>'
-            f'</span>'
-            f'</div>'
+            '<div class="tipo-membro-hdr">'
+            '<span>Tipo de Membro</span>'
+            '<span class="help-tip-wrap">'
+            '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Tipo de Membro">?</span>'
+            '<div class="help-tip-popover" role="tooltip">'
+            '<p><strong>Membros plenos</strong> são ambientes de inovação geridos por organizações sem fins lucrativos ou públicas. '
+            'Eles podem receber recursos do Governo do Estado por meio de convênios e termos de fomento.</p>'
+            '<p><strong>Membros associados</strong> são ambientes de inovação geridos por organizações privadas com fins lucrativos. '
+            'Embora não possam receber recursos orçamentários, eles podem participar em editais de financiamento e programas de capacitação.</p>'
+            '</div>'
+            '</span>'
+            '</div>'
         )
         st.markdown(html_tipo_hdr, unsafe_allow_html=True)
         if hasattr(st, "segmented_control"):
