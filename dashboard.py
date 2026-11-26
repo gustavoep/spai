@@ -158,27 +158,28 @@ COORDENADAS_SP = {
     "Olímpia": (-20.7381, -48.9142), "São Sebastião": (-23.7600, -45.4100), "Araçatuba": (-21.2089, -50.4328)
 }
 
-# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste, Compactação e Drawer)
+# Estilização CSS Personalizada - Institucional SPAI (Alto Contraste, Alinhamento e Drawer)
 st.markdown("""
     <style>
-    .block-container { padding-top: 0.75rem; padding-bottom: 0.5rem; }
+    .block-container { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 
     /* Card de Destaque Executivo - Total de Membros */
     .kpi-box-membros {
         background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
         color: #ffffff;
         border-radius: 10px;
-        padding: 12px 10px;
+        padding: 13px 10px;
         text-align: center;
         box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
         border-left: 5px solid #0a9396;
-        height: 100%;
+        min-height: 76px;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        align-items: center;
     }
     .kpi-val-membros {
-        font-size: 34px;
+        font-size: 32px;
         font-weight: 800;
         line-height: 1;
         color: #ffffff;
@@ -189,7 +190,7 @@ st.markdown("""
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.8px;
-        margin-top: 5px;
+        margin-top: 6px;
         color: #94d2bd;
     }
 
@@ -199,16 +200,17 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-top: 4px solid #005f73;
         border-radius: 10px;
-        padding: 12px 8px;
+        padding: 13px 8px;
         text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        height: 100%;
+        min-height: 76px;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        align-items: center;
     }
-    .kpi-val-top { font-size: 30px; font-weight: 800; line-height: 1; color: #005f73; }
-    .kpi-lbl-top { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; margin-top: 5px; color: #1e293b; }
+    .kpi-val-top { font-size: 29px; font-weight: 800; line-height: 1; color: #005f73; }
+    .kpi-lbl-top { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; margin-top: 6px; color: #1e293b; }
 
     /* Cards da Segunda Linha (Categorias) */
     .kpi-box-sec {
@@ -216,30 +218,35 @@ st.markdown("""
         border: 1px solid #cbd5e1;
         border-top: 3px solid #0a9396;
         border-radius: 8px;
-        padding: 8px 6px;
+        padding: 9px 6px;
         text-align: center;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        height: 100%;
+        min-height: 60px;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        align-items: center;
     }
-    .kpi-val-sec { font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1; }
-    .kpi-lbl-sec { font-size: 9.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 4px; line-height: 1.2; }
-    .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 2px; }
+    .kpi-val-sec { font-size: 21px; font-weight: 800; color: #0f172a; line-height: 1; }
+    .kpi-lbl-sec { font-size: 9.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 5px; line-height: 1.2; }
+    .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 3px; }
 
-    /* Segmented Control (Nível 1 - Tipo de Membro) com Alto Contraste */
+    /* Segmented Control (Nível 1 - Tipo de Membro) com Alto Contraste e Altura Alinhada aos Selects */
     div[data-testid="stSegmentedControl"] {
         background-color: #f1f5f9 !important;
         padding: 3px !important;
-        border-radius: 9px !important;
+        border-radius: 8px !important;
         border: 1px solid #cbd5e1 !important;
+        min-height: 40px !important;
+        display: flex !important;
+        align-items: center !important;
     }
     div[data-testid="stSegmentedControl"] button {
-        border-radius: 7px !important;
+        border-radius: 6px !important;
         font-weight: 700 !important;
         font-size: 12.5px !important;
         color: #1e293b !important;
+        min-height: 32px !important;
         transition: all 0.15s ease-in-out !important;
     }
     div[data-testid="stSegmentedControl"] button[aria-pressed="true"],
@@ -256,6 +263,10 @@ st.markdown("""
     }
 
     /* Pills (Nível 2 - Subcategorias) com Contraste Sólido no Estado Ativo */
+    div[data-testid="stPills"] {
+        margin-top: 2px !important;
+        margin-bottom: 6px !important;
+    }
     div[data-testid="stPills"] button {
         border-radius: 999px !important;
         font-weight: 600 !important;
@@ -287,12 +298,9 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa Compacta de Ambientes com Badge Nativo via Markdown (code) */
-    div[data-testid="stVerticalBlock"]:has(button p code) {
-        gap: 4px !important;
-    }
-    div[data-testid="stElementContainer"]:has(button p code) {
-        margin: 0 !important;
+    /* Lista Interativa Compacta de Ambientes (Escopo restrito apenas aos botões com badge <code>) */
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
+        gap: 6px !important;
     }
     div[data-testid="stButton"] button:has(p code) {
         width: 100% !important;
@@ -304,8 +312,8 @@ st.markdown("""
         border: 1px solid #cbd5e1 !important;
         border-left: 4px solid #0a9396 !important;
         border-radius: 8px !important;
-        padding: 7px 10px 7px 12px !important;
-        min-height: 38px !important;
+        padding: 8px 10px 8px 12px !important;
+        min-height: 40px !important;
         height: auto !important;
         cursor: pointer !important;
         transition: all 0.14s ease !important;
@@ -313,6 +321,8 @@ st.markdown("""
     div[data-testid="stButton"] button:has(p code) > div,
     div[data-testid="stButton"] button:has(p code) div[data-testid="stMarkdownContainer"] {
         width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
     }
     div[data-testid="stButton"] button:has(p code) p {
         width: 100% !important;
@@ -322,13 +332,14 @@ st.markdown("""
         gap: 10px !important;
         font-size: 12.5px !important;
         font-weight: 600 !important;
-        line-height: 1.25 !important;
+        line-height: 1.3 !important;
         color: #0f172a !important;
         margin: 0 !important;
         text-align: left !important;
     }
     div[data-testid="stButton"] button:has(p code) p code {
         flex-shrink: 0 !important;
+        margin-left: auto !important;
         display: inline-flex !important;
         align-items: center !important;
         background-color: #e6f4f1 !important;
@@ -1143,7 +1154,7 @@ if painel_selecionado == "Visão Geral":
     top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{municipios_count}</div><div class="kpi-lbl-top">Municípios</div></div>', unsafe_allow_html=True)
     top5.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
     sec1, sec2, sec3, sec4, sec5, sec6, sec7 = st.columns(7)
     sec1.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{parques}</div><div class="kpi-lbl-sec">Parques Tecnológicos</div></div>', unsafe_allow_html=True)
@@ -1154,10 +1165,10 @@ if painel_selecionado == "Visão Geral":
     sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
     sec7.markdown('<div class="kpi-box-sec"><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
 
-    st.markdown("<hr style='margin: 12px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='margin: 16px 0 14px 0; border-color: #e2e8f0;'>", unsafe_allow_html=True)
 
     # ----------------------------------------------------
-    # 1. BARRA DE FILTROS COMPACTA (ABOVE THE FOLD)
+    # 1. BARRA DE FILTROS COMPACTA E ALINHADA
     # ----------------------------------------------------
     rotulo_todos = f"Todos ({total_membros})"
     rotulo_plenos = f"Plenos ({plenos})"
@@ -1188,18 +1199,18 @@ if painel_selecionado == "Visão Geral":
         st.session_state["ambiente_drawer_selecionado"] = None
         st.session_state["ultimo_ponto_mapa"] = []
 
-    hdr_f, btn_f = st.columns([6, 1])
+    hdr_f, btn_f = st.columns([6, 1], vertical_alignment="center")
     with hdr_f:
-        st.markdown("<div style='font-size:15px; font-weight:800; color:#0f172a; padding-top:4px;'>🔍 Explorar Ambientes de Inovação</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:15.5px; font-weight:800; color:#0f172a;'>🔍 Explorar Ambientes de Inovação</div>", unsafe_allow_html=True)
     with btn_f:
         st.button("↺ Limpar filtros", key="btn_limpar_filtros_vg", on_click=resetar_filtros_vg, use_container_width=True)
 
-    # Linha Única de Controles Principais: Tipo de Membro | Região Administrativa | Município
-    f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4])
+    # Linha Única de Controles Principais alinhada na base: Tipo de Membro | Região Administrativa | Município
+    f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4], vertical_alignment="bottom")
 
     with f_col1:
         st.markdown(
-            "<div style='font-size:12px; font-weight:700; color:#1e293b; margin-bottom:4px;' "
+            "<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:6px; line-height:1.4;' "
             "title='Escolha a vinculação institucional: Membros Plenos possuem credenciamento definitivo e Membros Associados estão em processo de estruturação ou parceria.'>"
             "Tipo de Membro <span style='display:inline-block; background:#e2e8f0; color:#0f172a; border-radius:50%; width:15px; height:15px; text-align:center; font-size:10px; line-height:15px; cursor:help;'>?</span>"
             "</div>",
@@ -1271,7 +1282,7 @@ if painel_selecionado == "Visão Geral":
         cidade_sel = st.selectbox("Município", cidades_unicas, key="cidade_sel_vg")
 
     # Linha Subordinada: Pills de Formato / Categoria com Contadores Dinâmicos
-    st.markdown("<div style='font-size:12px; font-weight:700; color:#475569; margin: 2px 0 4px 0;'>Formato do Ambiente (filtrado pelo tipo acima):</div>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:12.5px; font-weight:700; color:#475569; margin: 10px 0 6px 0; line-height:1.4;'>Formato do Ambiente (filtrado pelo tipo acima):</div>", unsafe_allow_html=True)
     if hasattr(st, "pills"):
         cat_sel_display = st.pills(
             label="Formato do Ambiente",
@@ -1311,16 +1322,16 @@ if painel_selecionado == "Visão Geral":
 
     df_filt = df_filt.reset_index(drop=True)
 
-    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
     # ----------------------------------------------------
     # 2. ÁREA PRINCIPAL: MAPA + LISTA (OU DRAWER LATERAL)
     # ----------------------------------------------------
     drawer_ativo = st.session_state.get("ambiente_drawer_selecionado")
     if drawer_ativo is not None:
-        col_m, col_l, col_drawer = st.columns([5.2, 3.3, 3.5])
+        col_m, col_l, col_drawer = st.columns([5.2, 3.3, 3.5], vertical_alignment="top")
     else:
-        col_m, col_l = st.columns([6.2, 3.8])
+        col_m, col_l = st.columns([6.2, 3.8], vertical_alignment="top")
         col_drawer = None
 
     map_event = None
@@ -1366,7 +1377,7 @@ if painel_selecionado == "Visão Geral":
                 labels=labels_dict,
                 zoom=zoom_mapa,
                 center=centro_mapa,
-                height=500,
+                height=512,
             )
             fig.update_layout(
                 map_style="carto-positron",
@@ -1397,7 +1408,7 @@ if painel_selecionado == "Visão Geral":
             st.warning("⚠️ Nenhum ambiente com coordenadas mapeadas encontrado para os filtros aplicados.")
 
     with col_l:
-        # Campo de busca textual acima da lista (sem título duplicado nem checkboxes)
+        # Campo de busca textual acima da lista
         st.text_input(
             label="Buscar ambiente",
             placeholder="🔎 Buscar ambiente por nome (ex: SUPERA, Inova)...",
@@ -1408,21 +1419,21 @@ if painel_selecionado == "Visão Geral":
         qtd_encontrados = len(df_filt)
         lbl_resultados = "ambiente encontrado" if qtd_encontrados == 1 else "ambientes encontrados"
         st.markdown(
-            f"<div style='font-size:11.5px; font-weight:700; color:#475569; margin: -4px 0 6px 2px;'>"
+            f"<div style='font-size:12px; font-weight:700; color:#475569; margin: 2px 0 8px 2px;'>"
             f"{qtd_encontrados} {lbl_resultados} · Clique para abrir detalhes"
             f"</div>",
             unsafe_allow_html=True,
         )
 
         # Lista rolável compacta usando Markdown nativo (`Ver ficha ➔`) renderizado como badge <code>
-        with st.container(height=435, border=True):
+        with st.container(height=440, border=True):
             if df_filt.empty:
                 st.info("Nenhum ambiente corresponde à busca atual.")
             else:
                 for idx_row, row_item in df_filt.iterrows():
                     nome_item = str(row_item[col_nome_orig]).strip().replace("`", "")
                     mun_item = str(row_item.iloc[3]).strip().replace("`", "") if df_filt.shape[1] > 3 else ""
-                    rotulo_botao = f"{nome_item}  ·  {mun_item} `Ver ficha ➔`" if mun_item else f"{nome_item} `Ver ficha ➔`"
+                    rotulo_botao = f"{nome_item} · {mun_item} `Ver ficha ➔`" if mun_item else f"{nome_item} `Ver ficha ➔`"
 
                     if st.button(rotulo_botao, key=f"env_btn_{idx_row}_{nome_item}", use_container_width=True):
                         st.session_state["ambiente_drawer_selecionado"] = montar_dados_ambiente(
@@ -1505,7 +1516,7 @@ if painel_selecionado == "Visão Geral":
                         btn.dataset.hoverBound = '1';
                         const pEl = btn.querySelector('p');
                         const textoCompleto = ((pEl ? pEl.innerText : btn.innerText) || '').trim();
-                        const nomeEnv = textoCompleto.split('  ·  ')[0].replace(/Ver ficha.*$/, '').trim();
+                        const nomeEnv = textoCompleto.split(' · ')[0].replace(/Ver ficha.*$/, '').trim();
                         btn.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
                         btn.addEventListener('mouseleave', () => destacarPinoMapa(null));
                     }});
