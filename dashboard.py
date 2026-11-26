@@ -7,8 +7,7 @@ import re
 import json
 import html
 import unicodedata
-from urllib.parse import quote, unquote, urlparse, parse_qs
-from urllib.request import Request, urlopen
+from urllib.parse import quote
 from datetime import datetime, timezone, timedelta
 
 # Caminhos exatos no GitHub / Repositório
@@ -25,9 +24,6 @@ FUSO_BRASILIA = timezone(timedelta(hours=-3))
 # Paleta de Cores Institucionais SPAI / SCTI-SP
 PALETA_SPAI_ESCALA = ["#94d2bd", "#0a9396", "#005f73", "#1e293b"]
 
-# Data de corte entre o Acervo Histórico (Imprensa Oficial) e o Novo Portal DOE-SP
-DATA_CORTE_NOVO_DOE = datetime(2023, 3, 1)
-
 # Função para normalizar strings (remove acentos, maiúsculas e espaços extras)
 def normalizar_texto(txt):
     if not isinstance(txt, str):
@@ -35,12 +31,6 @@ def normalizar_texto(txt):
     txt = txt.strip().lower()
     txt = unicodedata.normalize('NFKD', txt).encode('ASCII', 'ignore').decode('utf-8')
     return txt
-
-# Gera slug compatível com as URLs do doe.sp.gov.br (ex: resolucao-scti-n-31-de-23-de-abril-de-2025)
-def gerar_slug_doe(txt):
-    s = normalizar_texto(txt)
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    return s.strip("-")
 
 # Padroniza o rótulo de exibição da categoria no formato institucional
 def formatar_categoria_exibicao(cat):
@@ -542,25 +532,6 @@ st.markdown("""
         color: #0f172a;
         line-height: 1.35;
     }
-    .drawer-doe-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        margin-top: 7px;
-        font-size: 11.5px;
-        font-weight: 700;
-        color: #ffffff !important;
-        text-decoration: none !important;
-        background-color: #005f73;
-        border: 1px solid #005f73;
-        border-radius: 6px;
-        padding: 5px 11px;
-        transition: all 0.15s ease;
-    }
-    .drawer-doe-link:hover {
-        background-color: #0a9396;
-        border-color: #0a9396;
-    }
     .drawer-actions {
         display: flex;
         flex-wrap: wrap;
@@ -832,7 +803,7 @@ def buscar_detalhes_ambiente(nome_ambiente):
 
     return verts, segs
 
-# Extrai campos opcionais extras da planilha (Endereço, Site, E-mail, Telefone)
+# Extrai campos opcionais extras da planilha (Endereço, Site, E-mail, Telefone, Resolução)
 def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
     for col in row.index:
@@ -848,156 +819,17 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
                 return val
     return ""
 
-# Extrai data (dd/mm/aaaa, objeto datetime) e ano a partir do texto da Resolução
-def extrair_data_resolucao(texto_resolucao):
-    texto = str(texto_resolucao or "")
-    m_data = re.search(r"\b(\d{1,2})[/\.-](\d{1,2})[/\.-](19\d{2}|20\d{2})\b", texto)
-    if m_data:
-        dia = int(m_data.group(1))
-        mes = int(m_data.group(2))
-        ano = int(m_data.group(3))
-        try:
-            dt = datetime(ano, mes, dia)
-            return dt, dt.strftime("%d/%m/%Y"), ano
-        except ValueError:
-            pass
-
-    m_ano = re.search(r"\b(19\d{2}|20\d{2})\b", texto)
-    if m_ano:
-        ano = int(m_ano.group(1))
-        return None, None, ano
-
-    return None, None, None
-
-# Resolve em tempo real (com cache de 24h) a URL direta do ato publicado no doe.sp.gov.br ou imprensaoficial.com.br
-# Padrão de destino: https://doe.sp.gov.br/executivo/secretaria-de-ciencia-tecnologia-e-inovacao/resolucao-scti-n-31-de-23-de-abril-de-2025-2025051911152201086171
-@st.cache_data(ttl=86400, show_spinner=False)
-def resolver_url_direta_ato_doe(texto_resolucao, nome_ambiente=""):
-    texto_limpo = re.sub(r"\s+", " ", str(texto_resolucao or "")).strip()
-    nome_limpo = re.sub(r"\s+", " ", str(nome_ambiente or "")).strip()
-
-    dt_ato, data_br, ano = extrair_data_resolucao(texto_limpo)
-    eh_historico = (dt_ato < DATA_CORTE_NOVO_DOE) if dt_ato else (ano < 2023 if ano else False)
-
-    # Identifica o núcleo do ato normativo (ex: Resolução SCTI nº 31, Resolução SD nº 10)
-    match_ato = re.search(
-        r"(Resolu[çc][ãa]o|Decreto|Portaria|Delibera[çc][ãa]o)\s+([A-ZÀ-Ú]{2,12})\s*(?:n[º°o\.]*\s*)?(\d+)",
-        texto_limpo,
-        flags=re.IGNORECASE,
-    )
-    if match_ato:
-        tipo_ato = match_ato.group(1).capitalize()
-        sigla = match_ato.group(2).upper()
-        numero = match_ato.group(3)
-        slug_esperado = gerar_slug_doe(f"{tipo_ato} {sigla} n {numero}")
-        consulta = f'site:doe.sp.gov.br/executivo "{tipo_ato} {sigla}" "{numero}" {ano or ""}'.strip()
-        if eh_historico:
-            consulta = f'(site:imprensaoficial.com.br OR site:doe.sp.gov.br) "{tipo_ato} {sigla}" "{numero}" {ano or ""}'.strip()
-    elif texto_limpo:
-        slug_esperado = gerar_slug_doe(texto_limpo[:45])
-        consulta = f'(site:doe.sp.gov.br OR site:imprensaoficial.com.br) "{texto_limpo}"'
-    else:
-        slug_esperado = ""
-        consulta = f'(site:doe.sp.gov.br OR site:imprensaoficial.com.br) "{nome_limpo}" SPAI'
-
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept-Language": "pt-BR,pt;q=0.9",
-    }
-
-    # 1. Tenta localizar a URL canônica exata no índice do doe.sp.gov.br / imprensaoficial.com.br
-    endpoints_descoberta = [
-        f"https://html.duckduckgo.com/html/?q={quote(consulta)}",
-        f"https://www.bing.com/search?q={quote(consulta)}",
-    ]
-
-    candidatos_doe = []
-    candidatos_io = []
-
-    for endpoint in endpoints_descoberta:
-        try:
-            req = Request(endpoint, headers=headers)
-            with urlopen(req, timeout=6) as resp:
-                html_resp = resp.read().decode("utf-8", errors="ignore")
-
-            # Extrai URLs diretas ou redirecionadas (uddg=...)
-            urls_brutas = re.findall(r"https?://[^\s\"'<>\\]+", html_resp)
-            for u in urls_brutas:
-                u_dec = unquote(u)
-                if "uddg=" in u_dec:
-                    qs = parse_qs(urlparse(u_dec).query)
-                    if "uddg" in qs and qs["uddg"]:
-                        u_dec = qs["uddg"][0]
-                u_dec = u_dec.split("&amp;")[0].rstrip(".,;)")
-
-                # Padrão exato do documento publicado no novo DOE-SP:
-                # https://doe.sp.gov.br/executivo/<orgao>/<slug-resolucao-com-id-numerico>
-                if re.match(r"^https?://(?:www\.)?doe\.sp\.gov\.br/executivo/[^/]+/[a-z0-9-]+-\d{10,}$", u_dec):
-                    candidatos_doe.append(u_dec)
-                elif re.match(r"^https?://(?:www\.)?imprensaoficial\.com\.br/.*(?:MostraPage|BuscaDO|pdf).*", u_dec, flags=re.IGNORECASE):
-                    candidatos_io.append(u_dec)
-        except Exception:
-            continue
-
-        if candidatos_doe or candidatos_io:
-            break
-
-    # Prioriza o link cujo slug corresponda exatamente ao número e órgão da resolução
-    if candidatos_doe:
-        for cand in candidatos_doe:
-            if slug_esperado and slug_esperado in cand:
-                return cand, "📰 Consultar no Diário Oficial ↗"
-        return candidatos_doe[0], "📰 Consultar no Diário Oficial ↗"
-
-    if candidatos_io:
-        return candidatos_io[0], "📰 Consultar na Imprensa Oficial ↗"
-
-    # Fallback oficial direto caso o documento ainda não esteja indexado externamente
-    if eh_historico:
-        return "https://www.imprensaoficial.com.br/DO/BuscaDO2001_11_2.aspx", "📰 Consultar na Imprensa Oficial ↗"
-    return "https://doe.sp.gov.br/executivo/secretaria-de-ciencia-tecnologia-e-inovacao", "📰 Consultar no Diário Oficial ↗"
-
-# Extrai o texto da Resolução de Credenciamento e a URL direta correspondente
-def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
+# Extrai exclusivamente a descrição textual da Resolução de Credenciamento
+def extrair_texto_resolucao(row):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
-    texto_resolucao = ""
-    url_direta = ""
-
-    # 1. Busca primeiro por coluna dedicada de URL do Diário Oficial (ex: "Link Resolução", "URL DOE")
-    for col in row.index:
-        c_norm = normalizar_texto(col)
-        if any(k in c_norm for k in ["link resolucao", "url resolucao", "link doe", "url doe", "diario oficial"]):
-            val = str(row[col]).strip() if pd.notna(row[col]) else ""
-            if val.lower() not in valores_invalidos:
-                if val.startswith(("http://", "https://")):
-                    url_direta = val
-                    break
-                elif "doe.sp.gov.br" in val or "imprensaoficial.com.br" in val:
-                    url_direta = f"https://{val}"
-                    break
-
-    # 2. Busca pela coluna "Resolução" (ou "Resolucao"), extraindo tanto o texto quanto eventual URL embutida
     for col in row.index:
         c_norm = normalizar_texto(col)
         if "resolucao" in c_norm and not any(k in c_norm for k in ["link", "url"]):
             val = str(row[col]).strip() if pd.notna(row[col]) else ""
             if val.lower() not in valores_invalidos:
-                match_url = re.search(r"https?://[^\s<>\"']+", val)
-                if match_url:
-                    if not url_direta:
-                        url_direta = match_url.group(0).rstrip(".,;)")
-                    texto_limpo = re.sub(r"https?://[^\s<>\"']+", "", val).strip(" -–—|()")
-                    texto_resolucao = texto_limpo if texto_limpo else "Resolução de Credenciamento (DOE-SP)"
-                else:
-                    texto_resolucao = val
-                break
-
-    if url_direta:
-        rotulo = "📰 Consultar na Imprensa Oficial ↗" if "imprensaoficial.com.br" in url_direta else "📰 Consultar no Diário Oficial ↗"
-        return texto_resolucao, url_direta, rotulo
-
-    url_resolvida, rotulo_resolvido = resolver_url_direta_ato_doe(texto_resolucao, nome_ambiente)
-    return texto_resolucao, url_resolvida, rotulo_resolvido
+                texto_limpo = re.sub(r"https?://[^\s<>\"']+", "", val).strip(" -–—|()")
+                return texto_limpo
+    return ""
 
 # Monta o dicionário completo de informações do ambiente selecionado (mapa ou lista)
 def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
@@ -1011,7 +843,7 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
     site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
     contato_env = extrair_campo_opcional(row_sel, ["email", "e-mail", "telefone", "fone", "whatsapp", "contato"], somente_email_ou_fone=True)
-    resolucao_txt, resolucao_url, resolucao_btn_lbl = extrair_resolucao_e_link_doe(row_sel, nome_env)
+    resolucao_txt = extrair_texto_resolucao(row_sel)
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -1026,8 +858,6 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
         "site": site_env,
         "contato": contato_env,
         "resolucao_txt": resolucao_txt,
-        "resolucao_url": resolucao_url,
-        "resolucao_btn_lbl": resolucao_btn_lbl,
         "verticais": v_env,
         "segmentos": s_env,
     }
@@ -1062,7 +892,7 @@ def calcular_enquadramento_mapa(df_pontos, filtro_regional_ativo=False):
 
     return centro, zoom
 
-# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, link direto da resolução, endereço, site e contato
+# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, resolução textual, endereço, site e contato
 def renderizar_drawer_detalhes(dados):
     endereco_esc = html.escape(dados["endereco"]) if dados["endereco"] else f"{html.escape(dados['municipio'])} — RA de {html.escape(dados['regiao'])}, SP"
     regiao_esc = html.escape(dados["regiao"])
@@ -1070,26 +900,20 @@ def renderizar_drawer_detalhes(dados):
     tipo_esc = html.escape(dados["tipo"])
     cat_esc = html.escape(dados["categoria"])
 
-    # Bloco da Resolução de Credenciamento com link direto para a página do ato no DOE-SP / Imprensa Oficial
+    # Bloco da Resolução de Credenciamento (apenas descrição textual)
     res_txt = dados.get("resolucao_txt", "").strip()
-    url_oficial_esc = html.escape(dados.get("resolucao_url", ""), quote=True)
-    btn_lbl_esc = html.escape(dados.get("resolucao_btn_lbl", "📰 Consultar no Diário Oficial ↗"))
-
     if res_txt:
         res_txt_esc = html.escape(res_txt)
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
             f'<div class="drawer-resolucao-box">'
             f'<div class="drawer-resolucao-txt">{res_txt_esc}</div>'
-            f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
             f'</div>'
         )
     else:
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
-            f'<div class="drawer-value"><i>Não informada na planilha.</i><br>'
-            f'<a href="{url_oficial_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">{btn_lbl_esc}</a>'
-            f'</div>'
+            f'<div class="drawer-value"><i>Não informada na planilha.</i></div>'
         )
 
     # Link de Site
