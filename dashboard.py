@@ -298,7 +298,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa Compacta de Ambientes (Escopo restrito apenas aos botões com badge <code>) */
+    /* Lista Interativa Compacta de Ambientes - Alinhamento Uniforme à Esquerda + Badge na Extremidade Direita */
     div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
         gap: 6px !important;
     }
@@ -306,14 +306,14 @@ st.markdown("""
         width: 100% !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
+        justify-content: flex-start !important;
         text-align: left !important;
         background-color: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-left: 4px solid #0a9396 !important;
         border-radius: 8px !important;
-        padding: 8px 10px 8px 12px !important;
-        min-height: 40px !important;
+        padding: 8px 12px 8px 14px !important;
+        min-height: 42px !important;
         height: auto !important;
         cursor: pointer !important;
         transition: all 0.14s ease !important;
@@ -321,20 +321,27 @@ st.markdown("""
     div[data-testid="stButton"] button:has(p code) > div,
     div[data-testid="stButton"] button:has(p code) div[data-testid="stMarkdownContainer"] {
         width: 100% !important;
+        flex: 1 1 100% !important;
         display: flex !important;
         align-items: center !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     div[data-testid="stButton"] button:has(p code) p {
         width: 100% !important;
+        flex: 1 1 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 10px !important;
+        gap: 12px !important;
         font-size: 12.5px !important;
         font-weight: 600 !important;
-        line-height: 1.3 !important;
+        line-height: 1.35 !important;
         color: #0f172a !important;
         margin: 0 !important;
+        padding: 0 !important;
         text-align: left !important;
     }
     div[data-testid="stButton"] button:has(p code) p code {
@@ -342,11 +349,12 @@ st.markdown("""
         margin-left: auto !important;
         display: inline-flex !important;
         align-items: center !important;
+        justify-content: center !important;
         background-color: #e6f4f1 !important;
         color: #005f73 !important;
         border: 1px solid #94d2bd !important;
         border-radius: 999px !important;
-        padding: 3px 10px !important;
+        padding: 3px 11px !important;
         font-family: inherit !important;
         font-size: 11px !important;
         font-weight: 800 !important;
