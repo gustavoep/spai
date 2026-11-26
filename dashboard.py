@@ -841,9 +841,45 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
                 return val
     return ""
 
-# Gera URL de pesquisa direta restrita ao domínio oficial do DOE-SP (sem usar a rota quebrada /busca?q=)
-def montar_url_pesquisa_doe(termo_busca):
-    consulta = f'site:doe.sp.gov.br "{termo_busca}"'
+# Gera URL de pesquisa inteligente no acervo do DOE-SP (novo portal >=2023 e acervo histórico <2023)
+def montar_url_pesquisa_doe(texto_resolucao, nome_ambiente=""):
+    texto_limpo = re.sub(r"\s+", " ", str(texto_resolucao or "")).strip()
+    nome_limpo = re.sub(r"\s+", " ", str(nome_ambiente or "")).strip()
+
+    # Identifica o ano do ato normativo (ex: 2010, 2024)
+    match_ano = re.search(r"\b(19\d{2}|20\d{2})\b", texto_limpo)
+    ano = int(match_ano.group(1)) if match_ano else None
+
+    # Extrai o núcleo do ato normativo (ex: "Resolução SD 10 2010" ou "Resolução SCTI 15 2024")
+    match_ato = re.search(
+        r"(Resolu[çc][ãa]o|Decreto|Portaria|Delibera[çc][ãa]o)\s+([A-ZÀ-Ú]{2,12})\s*(?:n[º°o\.]*\s*)?(\d+)",
+        texto_limpo,
+        flags=re.IGNORECASE,
+    )
+
+    if match_ato:
+        tipo_ato = match_ato.group(1)
+        sigla_orgao = match_ato.group(2).upper()
+        num_ato = match_ato.group(3)
+        termo_base = f'"{tipo_ato} {sigla_orgao}" "{num_ato}"'
+        if ano:
+            termo_base += f' "{ano}"'
+    elif texto_limpo:
+        # Remove pontuação de ordinal ("nº", "n.") e datas longas que variam de formato no DOE
+        sem_pont = re.sub(r"\bn[º°o\.]+\s*", "", texto_limpo, flags=re.IGNORECASE)
+        sem_data_ext = re.sub(r"\bde\s+\d{1,2}[/\.-]\d{1,2}[/\.-](19\d{2}|20\d{2})", r" \1", sem_pont, flags=re.IGNORECASE)
+        termo_base = sem_data_ext.strip()
+    else:
+        termo_base = f'"{nome_limpo}" "SPAI"'
+
+    # Atos anteriores a 2023 estão no acervo histórico da Imprensa Oficial / ALESP / SCTI;
+    # Atos de 2023 em diante estão no novo portal doe.sp.gov.br
+    if ano is not None and ano < 2023:
+        escopo_sites = "(site:imprensaoficial.com.br OR site:al.sp.gov.br OR site:inovacao.sp.gov.br OR site:doe.sp.gov.br)"
+    else:
+        escopo_sites = "(site:doe.sp.gov.br OR site:inovacao.sp.gov.br OR site:imprensaoficial.com.br)"
+
+    consulta = f"{escopo_sites} {termo_base}"
     return f"https://www.google.com/search?q={quote(consulta)}"
 
 # Extrai o texto da Resolução de Credenciamento e a URL correspondente no Diário Oficial (DOE-SP)
@@ -882,9 +918,9 @@ def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
                         url_resolucao = f"https://{val}"
                         break
 
-    # 3. Se houver texto de resolução mas não URL direta na planilha, pesquisa no domínio oficial doe.sp.gov.br
+    # 3. Se houver texto de resolução mas não URL direta na planilha, monta consulta otimizada ao acervo do DOE-SP
     if texto_resolucao and not url_resolucao:
-        url_resolucao = montar_url_pesquisa_doe(texto_resolucao)
+        url_resolucao = montar_url_pesquisa_doe(texto_resolucao, nome_ambiente)
 
     return texto_resolucao, url_resolucao
 
@@ -972,7 +1008,7 @@ def renderizar_drawer_detalhes(dados):
             f'</div>'
         )
     else:
-        doe_fallback_url = html.escape(montar_url_pesquisa_doe(dados["nome"]), quote=True)
+        doe_fallback_url = html.escape(montar_url_pesquisa_doe("", dados["nome"]), quote=True)
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
             f'<div class="drawer-value"><i>Não informada na planilha.</i> '
