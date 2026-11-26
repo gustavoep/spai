@@ -841,6 +841,11 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
                 return val
     return ""
 
+# Gera URL de pesquisa direta restrita ao domínio oficial do DOE-SP (sem usar a rota quebrada /busca?q=)
+def montar_url_pesquisa_doe(termo_busca):
+    consulta = f'site:doe.sp.gov.br "{termo_busca}"'
+    return f"https://www.google.com/search?q={quote(consulta)}"
+
 # Extrai o texto da Resolução de Credenciamento e a URL correspondente no Diário Oficial (DOE-SP)
 def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
@@ -877,12 +882,9 @@ def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
                         url_resolucao = f"https://{val}"
                         break
 
-    # 3. Se houver texto de resolução mas não URL explícita na planilha, monta link de busca direta no Diário Oficial de SP
+    # 3. Se houver texto de resolução mas não URL direta na planilha, pesquisa no domínio oficial doe.sp.gov.br
     if texto_resolucao and not url_resolucao:
-        termo_pesquisa = texto_resolucao
-        if "scti" not in normalizar_texto(termo_pesquisa) and "resolucao" not in normalizar_texto(termo_pesquisa):
-            termo_pesquisa = f"Resolução SCTI {texto_resolucao}"
-        url_resolucao = f"https://www.doe.sp.gov.br/busca?q={quote(termo_pesquisa)}"
+        url_resolucao = montar_url_pesquisa_doe(texto_resolucao)
 
     return texto_resolucao, url_resolucao
 
@@ -970,7 +972,7 @@ def renderizar_drawer_detalhes(dados):
             f'</div>'
         )
     else:
-        doe_fallback_url = html.escape(f"https://www.doe.sp.gov.br/busca?q={quote(dados['nome'] + ' SPAI')}", quote=True)
+        doe_fallback_url = html.escape(montar_url_pesquisa_doe(dados["nome"]), quote=True)
         resolucao_block_html = (
             f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
             f'<div class="drawer-value"><i>Não informada na planilha.</i> '
