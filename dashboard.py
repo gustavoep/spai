@@ -59,6 +59,48 @@ def formatar_percentual_ptbr(valor):
         return f"{int(arredondado)}%"
     return f"{arredondado:.1f}%".replace(".", ",")
 
+# Retorna ícone SVG de linha simples para os cards de formato da Visão Geral
+def obter_icone_formato_spai(tipo_formato, cor="#005f73", tamanho=24):
+    props = f'width="{tamanho}" height="{tamanho}" viewBox="0 0 24 24" fill="none" stroke="{cor}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
+    if tipo_formato == "parque":
+        # Campus / Parque tecnológico (edifícios integrados com área verde)
+        return (
+            f'<svg {props}>'
+            f'<path d="M3 21h18"/>'
+            f'<path d="M5 21V8l6-3v16"/>'
+            f'<path d="M11 11h6v10"/>'
+            f'<path d="M8 10h.01"/><path d="M8 14h.01"/><path d="M14 15h.01"/>'
+            f'<circle cx="19" cy="9" r="2.5"/>'
+            f'<path d="M19 11.5V21"/>'
+            f'</svg>'
+        )
+    if tipo_formato == "incubadora":
+        # Prédio / Incubadora de empresas
+        return (
+            f'<svg {props}>'
+            f'<rect x="4" y="3" width="16" height="18" rx="2"/>'
+            f'<path d="M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4"/>'
+            f'<path d="M8 7h2"/><path d="M14 7h2"/>'
+            f'<path d="M8 11h2"/><path d="M14 11h2"/>'
+            f'</svg>'
+        )
+    if tipo_formato == "centro_inovacao":
+        # Centro / Rede de conexão e inovação
+        return (
+            f'<svg {props}>'
+            f'<circle cx="12" cy="12" r="3"/>'
+            f'<circle cx="5" cy="6" r="2"/>'
+            f'<circle cx="19" cy="6" r="2"/>'
+            f'<circle cx="5" cy="18" r="2"/>'
+            f'<circle cx="19" cy="18" r="2"/>'
+            f'<path d="M6.7 7.3 9.8 10.2"/>'
+            f'<path d="M17.3 7.3 14.2 10.2"/>'
+            f'<path d="M6.7 16.7 9.8 13.8"/>'
+            f'<path d="M17.3 16.7 14.2 13.8"/>'
+            f'</svg>'
+        )
+    return ""
+
 # Retorna ícone SVG minimalista de acordo com o tema da Vertical ou Segmento
 def obter_icone_svg(categoria, cor="#005f73", tamanho=26):
     cat_norm = normalizar_texto(categoria)
@@ -212,24 +254,145 @@ st.markdown("""
     .kpi-val-top { font-size: 29px; font-weight: 800; line-height: 1; color: #005f73; }
     .kpi-lbl-top { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.7px; margin-top: 6px; color: #1e293b; }
 
-    /* Cards da Segunda Linha (Categorias) */
-    .kpi-box-sec {
+    /* Grupo de Destaque dos 3 Formatos Principais (Parques, Incubadoras, Centros de Inovação) */
+    .formato-destaque-card {
         background-color: #ffffff;
         border: 1px solid #cbd5e1;
-        border-top: 3px solid #0a9396;
-        border-radius: 8px;
-        padding: 9px 6px;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        min-height: 60px;
+        border-top: 4px solid #005f73;
+        border-radius: 12px;
+        padding: 16px 20px 14px 20px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        align-items: center;
+        justify-content: space-between;
+        min-height: 136px;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .kpi-val-sec { font-size: 21px; font-weight: 800; color: #0f172a; line-height: 1; }
-    .kpi-lbl-sec { font-size: 9.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 5px; line-height: 1.2; }
-    .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 3px; }
+    .formato-destaque-card:hover {
+        border-color: #0a9396;
+        box-shadow: 0 4px 14px rgba(0, 95, 115, 0.10);
+    }
+    .formato-destaque-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .formato-destaque-val {
+        font-size: 44px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+        letter-spacing: -1px;
+    }
+    .formato-destaque-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        background-color: #f0fdfa;
+        border: 1px solid #ccfbf1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .formato-destaque-lbl {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-top: 8px;
+        line-height: 1.25;
+    }
+    .formato-destaque-meta {
+        margin-top: 10px;
+    }
+    .formato-destaque-prop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 5px;
+    }
+    .formato-destaque-prop strong {
+        color: #005f73;
+        font-weight: 800;
+    }
+    .formato-progress-track {
+        width: 100%;
+        height: 5px;
+        background-color: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .formato-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #005f73 0%, #0a9396 100%);
+        border-radius: 999px;
+    }
+
+    /* Faixa Secundária dos Demais Formatos (Aceleradoras, Outros, Distritos) */
+    .formato-sec-bar {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .formato-sec-item {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 9px;
+        padding: 9px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-height: 44px;
+    }
+    .formato-sec-lbl {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #334155;
+        line-height: 1.25;
+    }
+    .formato-sec-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+    .formato-sec-val {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1;
+    }
+    .formato-sec-pct {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .badge-em-formacao {
+        display: inline-flex;
+        align-items: center;
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        font-size: 10.5px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 999px;
+        white-space: nowrap;
+        letter-spacing: 0.2px;
+    }
+
+    @media (max-width: 992px) {
+        .formato-sec-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 576px) {
+        .formato-sec-bar { grid-template-columns: 1fr; }
+    }
 
     /* Tooltip Interativo do Botão '?' (Tipo de Membro) */
     .tipo-membro-hdr {
@@ -1264,16 +1427,83 @@ if painel_selecionado == "Visão Geral":
     top4.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{municipios_count}</div><div class="kpi-lbl-top">Municípios</div></div>', unsafe_allow_html=True)
     top5.markdown(f'<div class="kpi-box-top"><div class="kpi-val-top">{regioes_count}</div><div class="kpi-lbl-top">Regiões Administrativas</div></div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    sec1, sec2, sec3, sec4, sec5, sec6, sec7 = st.columns(7)
-    sec1.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{parques}</div><div class="kpi-lbl-sec">Parques Tecnológicos</div></div>', unsafe_allow_html=True)
-    sec2.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{incubadoras}</div><div class="kpi-lbl-sec">Incubadoras</div></div>', unsafe_allow_html=True)
-    sec3.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros}</div><div class="kpi-lbl-sec">Centros de Inovação</div></div>', unsafe_allow_html=True)
-    sec4.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{centros_conexao}</div><div class="kpi-lbl-sec">Centros de Conexão</div></div>', unsafe_allow_html=True)
-    sec5.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{aceleradoras}</div><div class="kpi-lbl-sec">Aceleradoras</div></div>', unsafe_allow_html=True)
-    sec6.markdown(f'<div class="kpi-box-sec"><div class="kpi-val-sec">{outros}</div><div class="kpi-lbl-sec">Outros Formatos</div></div>', unsafe_allow_html=True)
-    sec7.markdown('<div class="kpi-box-sec"><div class="kpi-lbl-sec">Distritos de Inovação</div><div class="kpi-sub-sec">em formação</div></div>', unsafe_allow_html=True)
+    # Grupo de destaque: os 3 formatos principais lado a lado com ícones, proporção e barra de progresso
+    base_total = max(total_membros, 1)
+    destaques_principais = [
+        {
+            "valor": parques,
+            "label": "Parques Tecnológicos",
+            "icone": obter_icone_formato_spai("parque", cor="#005f73", tamanho=22),
+        },
+        {
+            "valor": incubadoras,
+            "label": "Incubadoras",
+            "icone": obter_icone_formato_spai("incubadora", cor="#005f73", tamanho=22),
+        },
+        {
+            "valor": centros,
+            "label": "Centros de Inovação",
+            "icone": obter_icone_formato_spai("centro_inovacao", cor="#005f73", tamanho=22),
+        },
+    ]
+
+    dest_cols = st.columns(3)
+    for col_d, item_d in zip(dest_cols, destaques_principais):
+        qtd_d = int(item_d["valor"])
+        pct_num = (qtd_d / base_total) * 100
+        pct_fmt = formatar_percentual_ptbr(pct_num)
+        largura_barra = min(max(pct_num, 0.0), 100.0)
+
+        col_d.markdown(
+            f'<div class="formato-destaque-card">'
+            f'<div>'
+            f'<div class="formato-destaque-top">'
+            f'<div class="formato-destaque-val">{qtd_d}</div>'
+            f'<div class="formato-destaque-icon">{item_d["icone"]}</div>'
+            f'</div>'
+            f'<div class="formato-destaque-lbl">{item_d["label"]}</div>'
+            f'</div>'
+            f'<div class="formato-destaque-meta">'
+            f'<div class="formato-destaque-prop">'
+            f'<span>{qtd_d} de {total_membros}</span>'
+            f'<strong>{pct_fmt}</strong>'
+            f'</div>'
+            f'<div class="formato-progress-track">'
+            f'<div class="formato-progress-fill" style="width: {largura_barra:.1f}%;"></div>'
+            f'</div>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    # Faixa secundária: formatos complementares e status em formação como badge
+    pct_conexao = formatar_percentual_ptbr((centros_conexao / base_total) * 100)
+    pct_acel = formatar_percentual_ptbr((aceleradoras / base_total) * 100)
+    pct_outros = formatar_percentual_ptbr((outros / base_total) * 100)
+
+    html_faixa_sec = (
+        f'<div class="formato-sec-bar">'
+        f'<div class="formato-sec-item">'
+        f'<span class="formato-sec-lbl">Centros de Conexão</span>'
+        f'<div class="formato-sec-right"><span class="formato-sec-val">{centros_conexao}</span><span class="formato-sec-pct">({pct_conexao})</span></div>'
+        f'</div>'
+        f'<div class="formato-sec-item">'
+        f'<span class="formato-sec-lbl">Aceleradoras</span>'
+        f'<div class="formato-sec-right"><span class="formato-sec-val">{aceleradoras}</span><span class="formato-sec-pct">({pct_acel})</span></div>'
+        f'</div>'
+        f'<div class="formato-sec-item">'
+        f'<span class="formato-sec-lbl">Outros Formatos</span>'
+        f'<div class="formato-sec-right"><span class="formato-sec-val">{outros}</span><span class="formato-sec-pct">({pct_outros})</span></div>'
+        f'</div>'
+        f'<div class="formato-sec-item">'
+        f'<span class="formato-sec-lbl">Distritos de Inovação</span>'
+        f'<div class="formato-sec-right"><span class="badge-em-formacao">Em formação</span></div>'
+        f'</div>'
+        f'</div>'
+    )
+    st.markdown(html_faixa_sec, unsafe_allow_html=True)
 
     st.markdown("<hr style='margin: 16px 0 14px 0; border-color: #e2e8f0;'>", unsafe_allow_html=True)
 
