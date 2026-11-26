@@ -63,7 +63,6 @@ def formatar_percentual_ptbr(valor):
 def obter_icone_formato_spai(tipo_formato, cor="#005f73", tamanho=24):
     props = f'width="{tamanho}" height="{tamanho}" viewBox="0 0 24 24" fill="none" stroke="{cor}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"'
     if tipo_formato == "parque":
-        # Campus / Parque tecnológico (edifícios integrados com área verde)
         return (
             f'<svg {props}>'
             f'<path d="M3 21h18"/>'
@@ -75,7 +74,6 @@ def obter_icone_formato_spai(tipo_formato, cor="#005f73", tamanho=24):
             f'</svg>'
         )
     if tipo_formato == "incubadora":
-        # Prédio / Incubadora de empresas
         return (
             f'<svg {props}>'
             f'<rect x="4" y="3" width="16" height="18" rx="2"/>'
@@ -85,7 +83,6 @@ def obter_icone_formato_spai(tipo_formato, cor="#005f73", tamanho=24):
             f'</svg>'
         )
     if tipo_formato == "centro_inovacao":
-        # Centro / Rede de conexão e inovação
         return (
             f'<svg {props}>'
             f'<circle cx="12" cy="12" r="3"/>'
@@ -351,6 +348,9 @@ st.markdown("""
         min-height: 44px;
     }
     .formato-sec-lbl {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 12.5px;
         font-weight: 600;
         color: #334155;
@@ -394,7 +394,7 @@ st.markdown("""
         .formato-sec-bar { grid-template-columns: 1fr; }
     }
 
-    /* Tooltip Interativo do Botão '?' (Tipo de Membro) */
+    /* Tooltip Interativo do Botão '?' (Tipo de Membro e Distritos de Inovação) */
     .tipo-membro-hdr {
         position: relative;
         display: inline-flex;
@@ -456,6 +456,10 @@ st.markdown("""
         z-index: 9999;
         pointer-events: none;
         transition: opacity 0.16s ease, visibility 0.16s ease;
+    }
+    .help-tip-popover.help-tip-popover-right {
+        left: auto;
+        right: 0;
     }
     .help-tip-popover p {
         margin: 0 0 8px 0;
@@ -1478,7 +1482,7 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-    # Faixa secundária: formatos complementares e status em formação como badge
+    # Faixa secundária: formatos complementares e Distritos de Inovação com tooltip explicativo
     pct_conexao = formatar_percentual_ptbr((centros_conexao / base_total) * 100)
     pct_acel = formatar_percentual_ptbr((aceleradoras / base_total) * 100)
     pct_outros = formatar_percentual_ptbr((outros / base_total) * 100)
@@ -1498,7 +1502,18 @@ if painel_selecionado == "Visão Geral":
         f'<div class="formato-sec-right"><span class="formato-sec-val">{outros}</span><span class="formato-sec-pct">({pct_outros})</span></div>'
         f'</div>'
         f'<div class="formato-sec-item">'
-        f'<span class="formato-sec-lbl">Distritos de Inovação</span>'
+        f'<span class="formato-sec-lbl">'
+        f'<span>Distritos de Inovação</span>'
+        f'<span class="help-tip-wrap">'
+        f'<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Distritos de Inovação">?</span>'
+        f'<div class="help-tip-popover help-tip-popover-right" role="tooltip">'
+        f'<p><strong>Distritos de Inovação</strong> são áreas urbanas planejadas que integram universidades, centros de pesquisa, '
+        f'empresas e startups em um mesmo território conectado, estimulando a transferência de conhecimento, a revitalização urbana e a economia criativa.</p>'
+        f'<p><strong>Por que ainda não há membros consolidados:</strong> trata-se de uma modalidade em estruturação territorial e institucional no Estado '
+        f'(como a implantação do Distrito de Inovação de São Paulo na região da Cidade Universitária / Butantã), cujos critérios de credenciamento no SPAI ainda estão sendo regulamentados.</p>'
+        f'</div>'
+        f'</span>'
+        f'</span>'
         f'<div class="formato-sec-right"><span class="badge-em-formacao">Em formação</span></div>'
         f'</div>'
         f'</div>'
