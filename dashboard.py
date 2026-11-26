@@ -231,6 +231,88 @@ st.markdown("""
     .kpi-lbl-sec { font-size: 9.5px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-top: 5px; line-height: 1.2; }
     .kpi-sub-sec { font-size: 9px; color: #475569; font-style: italic; margin-top: 3px; }
 
+    /* Tooltip Interativo do Botão '?' (Tipo de Membro) */
+    .tipo-membro-hdr {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 6px;
+        line-height: 1.4;
+    }
+    .help-tip-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .help-tip-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e2e8f0;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+        border-radius: 50%;
+        width: 17px;
+        height: 17px;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        cursor: help;
+        transition: all 0.15s ease;
+    }
+    .help-tip-wrap:hover .help-tip-btn,
+    .help-tip-wrap:focus-within .help-tip-btn {
+        background-color: #005f73;
+        color: #ffffff;
+        border-color: #005f73;
+    }
+    .help-tip-popover {
+        visibility: hidden;
+        opacity: 0;
+        position: absolute;
+        left: 0;
+        top: calc(100% + 8px);
+        width: 390px;
+        max-width: 88vw;
+        background-color: #0f172a;
+        color: #f8fafc;
+        border: 1px solid #334155;
+        border-left: 4px solid #0a9396;
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.5;
+        text-align: left;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+        z-index: 9999;
+        pointer-events: none;
+        transition: opacity 0.16s ease, visibility 0.16s ease;
+    }
+    .help-tip-popover p {
+        margin: 0 0 8px 0;
+        color: #f8fafc !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+    .help-tip-popover p:last-child {
+        margin-bottom: 0;
+    }
+    .help-tip-popover strong {
+        color: #94d2bd;
+        font-weight: 700;
+    }
+    .help-tip-wrap:hover .help-tip-popover,
+    .help-tip-wrap:focus-within .help-tip-popover {
+        visibility: visible;
+        opacity: 1;
+    }
+
     /* Segmented Control (Nível 1 - Tipo de Membro) com Alto Contraste e Altura Alinhada aos Selects */
     div[data-testid="stSegmentedControl"] {
         background-color: #f1f5f9 !important;
@@ -1320,13 +1402,27 @@ if painel_selecionado == "Visão Geral":
     f_col1, f_col2, f_col3 = st.columns([2.2, 1.4, 1.4], vertical_alignment="bottom")
 
     with f_col1:
-        st.markdown(
-            "<div style='font-size:13px; font-weight:600; color:#1e293b; margin-bottom:6px; line-height:1.4;' "
-            "title='Escolha a vinculação institucional: Membros Plenos possuem credenciamento definitivo e Membros Associados estão em processo de estruturação ou parceria.'>"
-            "Tipo de Membro <span style='display:inline-block; background:#e2e8f0; color:#0f172a; border-radius:50%; width:15px; height:15px; text-align:center; font-size:10px; line-height:15px; cursor:help;'>?</span>"
-            "</div>",
-            unsafe_allow_html=True,
+        tooltip_tipo_membro = (
+            "Membros plenos são ambientes de inovação geridos por organizações sem fins lucrativos ou públicas. "
+            "Eles podem receber recursos do Governo do Estado por meio de convênios e termos de fomento.&#10;&#10;"
+            "Membros associados são ambientes de inovação geridos por organizações privadas com fins lucrativos. "
+            "Embora não possam receber recursos orçamentários, eles podem participar em editais de financiamento e programas de capacitação."
         )
+        html_tipo_hdr = (
+            f'<div class="tipo-membro-hdr">'
+            f'<span>Tipo de Membro</span>'
+            f'<span class="help-tip-wrap">'
+            f'<span class="help-tip-btn" tabindex="0" title="{tooltip_tipo_membro}" aria-label="Explicação sobre Tipo de Membro">?</span>'
+            f'<div class="help-tip-popover" role="tooltip">'
+            f'<p><strong>Membros plenos</strong> são ambientes de inovação geridos por organizações sem fins lucrativos ou públicas. '
+            f'Eles podem receber recursos do Governo do Estado por meio de convênios e termos de fomento.</p>'
+            f'<p><strong>Membros associados</strong> são ambientes de inovação geridos por organizações privadas com fins lucrativos. '
+            f'Embora não possam receber recursos orçamentários, eles podem participar em editais de financiamento e programas de capacitação.</p>'
+            f'</div>'
+            f'</span>'
+            f'</div>'
+        )
+        st.markdown(html_tipo_hdr, unsafe_allow_html=True)
         if hasattr(st, "segmented_control"):
             tipo_sel_display = st.segmented_control(
                 label="Tipo de Membro",
