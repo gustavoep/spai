@@ -436,6 +436,39 @@ st.markdown("""
         font-size: 11.5px;
         margin-top: 2px;
     }
+    .drawer-resolucao-box {
+        background-color: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-left: 3.5px solid #005f73;
+        border-radius: 7px;
+        padding: 8px 10px;
+        margin-top: 4px;
+    }
+    .drawer-resolucao-txt {
+        font-size: 12px;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.35;
+    }
+    .drawer-doe-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 5px;
+        font-size: 11.5px;
+        font-weight: 700;
+        color: #005f73 !important;
+        text-decoration: none !important;
+        background-color: #e6f4f1;
+        border: 1px solid #94d2bd;
+        border-radius: 6px;
+        padding: 3px 9px;
+    }
+    .drawer-doe-link:hover {
+        background-color: #005f73;
+        color: #ffffff !important;
+        border-color: #005f73;
+    }
     .drawer-actions {
         display: flex;
         flex-wrap: wrap;
@@ -710,7 +743,7 @@ def buscar_detalhes_ambiente(nome_ambiente):
 
     return verts, segs
 
-# Extrai campos opcionais extras da planilha (Endereço, Site, E-mail, Telefone)
+# Extrai campos opcionais extras da planilha (Endereço, Site, E-mail, Telefone, Resolução)
 def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
     valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
     for col in row.index:
@@ -726,6 +759,51 @@ def extrair_campo_opcional(row, palavras_chave, somente_email_ou_fone=False):
                 return val
     return ""
 
+# Extrai o texto da Resolução de Credenciamento e a URL correspondente no Diário Oficial (DOE-SP)
+def extrair_resolucao_e_link_doe(row, nome_ambiente=""):
+    valores_invalidos = {"", "nan", "none", "null", "nat", "-"}
+    texto_resolucao = ""
+    url_resolucao = ""
+
+    # 1. Busca explicitamente pela coluna "Resolução" (ou "Resolucao")
+    for col in row.index:
+        c_norm = normalizar_texto(col)
+        if "resolucao" in c_norm:
+            val = str(row[col]).strip() if pd.notna(row[col]) else ""
+            if val.lower() not in valores_invalidos:
+                # Verifica se a própria célula contém uma URL embutida
+                match_url = re.search(r"https?://[^\s<>\"']+", val)
+                if match_url:
+                    url_resolucao = match_url.group(0).rstrip(".,;)")
+                    texto_limpo = re.sub(r"https?://[^\s<>\"']+", "", val).strip(" -–—|()")
+                    texto_resolucao = texto_limpo if texto_limpo else "Resolução de Credenciamento (DOE-SP)"
+                else:
+                    texto_resolucao = val
+                break
+
+    # 2. Caso exista coluna dedicada de link do Diário Oficial / Resolução (ex: "Link Resolução", "DOE", "Diário Oficial")
+    if not url_resolucao:
+        for col in row.index:
+            c_norm = normalizar_texto(col)
+            if any(k in c_norm for k in ["doe", "diario oficial", "link resolucao", "url resolucao"]):
+                val = str(row[col]).strip() if pd.notna(row[col]) else ""
+                if val.lower() not in valores_invalidos:
+                    if val.startswith(("http://", "https://")):
+                        url_resolucao = val
+                        break
+                    elif "doe.sp.gov.br" in val or "imprensaoficial.com.br" in val:
+                        url_resolucao = f"https://{val}"
+                        break
+
+    # 3. Se houver texto de resolução mas não URL explícita na planilha, monta link de busca direta no Diário Oficial de SP
+    if texto_resolucao and not url_resolucao:
+        termo_pesquisa = texto_resolucao
+        if "scti" not in normalizar_texto(termo_pesquisa) and "resolucao" not in normalizar_texto(termo_pesquisa):
+            termo_pesquisa = f"Resolução SCTI {texto_resolucao}"
+        url_resolucao = f"https://www.doe.sp.gov.br/busca?q={quote(termo_pesquisa)}"
+
+    return texto_resolucao, url_resolucao
+
 # Monta o dicionário completo de informações do ambiente selecionado (mapa ou lista)
 def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     nome_env = str(row_sel[col_nome_orig]).strip()
@@ -738,6 +816,7 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
     endereco_env = extrair_campo_opcional(row_sel, ["endereco", "logradouro", "rua", "localizacao", "cep"])
     site_env = extrair_campo_opcional(row_sel, ["site", "website", "url", "portal", "pagina"])
     contato_env = extrair_campo_opcional(row_sel, ["email", "e-mail", "telefone", "fone", "whatsapp", "contato"], somente_email_ou_fone=True)
+    resolucao_txt, resolucao_url = extrair_resolucao_e_link_doe(row_sel, nome_env)
 
     v_env, s_env = buscar_detalhes_ambiente(nome_env)
 
@@ -751,6 +830,8 @@ def montar_dados_ambiente(row_sel, col_id_orig, col_nome_orig, num_cols):
         "endereco": endereco_env,
         "site": site_env,
         "contato": contato_env,
+        "resolucao_txt": resolucao_txt,
+        "resolucao_url": resolucao_url,
         "verticais": v_env,
         "segmentos": s_env,
     }
@@ -785,13 +866,34 @@ def calcular_enquadramento_mapa(df_pontos, filtro_regional_ativo=False):
 
     return centro, zoom
 
-# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, endereço, site e contato
+# Renderiza o Painel Lateral Sobreposto (Drawer) com detalhes, resolução DOE-SP, endereço, site e contato
 def renderizar_drawer_detalhes(dados):
     endereco_esc = html.escape(dados["endereco"]) if dados["endereco"] else f"{html.escape(dados['municipio'])} — RA de {html.escape(dados['regiao'])}, SP"
     regiao_esc = html.escape(dados["regiao"])
     nome_esc = html.escape(dados["nome"])
     tipo_esc = html.escape(dados["tipo"])
     cat_esc = html.escape(dados["categoria"])
+
+    # Bloco da Resolução de Credenciamento + Link para o Diário Oficial (DOE-SP)
+    res_txt = dados.get("resolucao_txt", "").strip()
+    res_url = dados.get("resolucao_url", "").strip()
+    if res_txt:
+        res_txt_esc = html.escape(res_txt)
+        res_url_esc = html.escape(res_url, quote=True)
+        resolucao_block_html = (
+            f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
+            f'<div class="drawer-resolucao-box">'
+            f'<div class="drawer-resolucao-txt">{res_txt_esc}</div>'
+            f'<a href="{res_url_esc}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">📰 Consultar no Diário Oficial (DOE-SP) ↗</a>'
+            f'</div>'
+        )
+    else:
+        doe_fallback_url = html.escape(f"https://www.doe.sp.gov.br/busca?q={quote(dados['nome'] + ' SPAI')}", quote=True)
+        resolucao_block_html = (
+            f'<div class="drawer-section-lbl">📜 Resolução de Credenciamento</div>'
+            f'<div class="drawer-value"><i>Não informada na planilha.</i> '
+            f'<a href="{doe_fallback_url}" target="_blank" rel="noopener noreferrer" class="drawer-doe-link">📰 Buscar no DOE-SP ↗</a></div>'
+        )
 
     # Link de Site (ou busca institucional caso não haja URL na coluna)
     site_raw = dados["site"].strip()
@@ -833,6 +935,7 @@ def renderizar_drawer_detalhes(dados):
         f'<span class="drawer-badge">{cat_esc}</span>'
         f'</div>'
         f'<div class="drawer-title">{nome_esc}</div>'
+        f'{resolucao_block_html}'
         f'<div class="drawer-section-lbl">📍 Endereço / Localização</div>'
         f'<div class="drawer-value">{endereco_esc}<div class="drawer-subvalue">Região Administrativa de {regiao_esc}</div></div>'
         f'<div class="drawer-section-lbl">💻 Verticais Tecnológicas</div>'
