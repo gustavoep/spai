@@ -294,6 +294,9 @@ st.markdown("""
         flex-shrink: 0;
     }
     .formato-destaque-lbl {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 13.5px;
         font-weight: 700;
         color: #0f172a;
@@ -394,7 +397,7 @@ st.markdown("""
         .formato-sec-bar { grid-template-columns: 1fr; }
     }
 
-    /* Tooltip Interativo do Botão '?' (Tipo de Membro e Distritos de Inovação) */
+    /* Tooltip Interativo do Botão '?' (Tipo de Membro, Incubadoras e Distritos de Inovação) */
     .tipo-membro-hdr {
         position: relative;
         display: inline-flex;
@@ -1433,23 +1436,35 @@ if painel_selecionado == "Visão Geral":
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # Grupo de destaque: os 3 formatos principais lado a lado com ícones, proporção e barra de progresso
+    # Grupo de destaque: os 3 formatos principais lado a lado com ícones, tooltips, proporção e barra de progresso
     base_total = max(total_membros, 1)
     destaques_principais = [
         {
             "valor": parques,
             "label": "Parques Tecnológicos",
             "icone": obter_icone_formato_spai("parque", cor="#005f73", tamanho=22),
+            "tooltip_html": "",
         },
         {
             "valor": incubadoras,
             "label": "Incubadoras",
             "icone": obter_icone_formato_spai("incubadora", cor="#005f73", tamanho=22),
+            "tooltip_html": (
+                '<span class="help-tip-wrap">'
+                '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Incubadoras">?</span>'
+                '<div class="help-tip-popover" role="tooltip">'
+                '<p><strong>Incubadoras</strong> são empreendimentos que, por tempo limitado, oferecem espaço físico para instalação de empresas e empreendimentos nascentes '
+                'voltados ao desenvolvimento de produtos e processos intensivos em conhecimento, disponibilizando suporte gerencial e tecnológico, assim como outros serviços '
+                'correlatos de valor agregado, com vista ao seu crescimento e consolidação.</p>'
+                '</div>'
+                '</span>'
+            ),
         },
         {
             "valor": centros,
             "label": "Centros de Inovação",
             "icone": obter_icone_formato_spai("centro_inovacao", cor="#005f73", tamanho=22),
+            "tooltip_html": "",
         },
     ]
 
@@ -1467,7 +1482,7 @@ if painel_selecionado == "Visão Geral":
             f'<div class="formato-destaque-val">{qtd_d}</div>'
             f'<div class="formato-destaque-icon">{item_d["icone"]}</div>'
             f'</div>'
-            f'<div class="formato-destaque-lbl">{item_d["label"]}</div>'
+            f'<div class="formato-destaque-lbl"><span>{item_d["label"]}</span>{item_d["tooltip_html"]}</div>'
             f'</div>'
             f'<div class="formato-destaque-meta">'
             f'<div class="formato-destaque-prop">'
