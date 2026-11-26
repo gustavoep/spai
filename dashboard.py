@@ -397,7 +397,7 @@ st.markdown("""
         .formato-sec-bar { grid-template-columns: 1fr; }
     }
 
-    /* Tooltip Interativo do Botão '?' (Tipo de Membro, Incubadoras e Distritos de Inovação) */
+    /* Tooltip Interativo do Botão '?' (Tipo de Membro, Formatos e Distritos de Inovação) */
     .tipo-membro-hdr {
         position: relative;
         display: inline-flex;
@@ -443,7 +443,7 @@ st.markdown("""
         position: absolute;
         left: 0;
         top: calc(100% + 8px);
-        width: 390px;
+        width: 410px;
         max-width: 88vw;
         background-color: #0f172a;
         color: #f8fafc;
@@ -1443,7 +1443,19 @@ if painel_selecionado == "Visão Geral":
             "valor": parques,
             "label": "Parques Tecnológicos",
             "icone": obter_icone_formato_spai("parque", cor="#005f73", tamanho=22),
-            "tooltip_html": "",
+            "tooltip_html": (
+                '<span class="help-tip-wrap">'
+                '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Parques Tecnológicos">?</span>'
+                '<div class="help-tip-popover" role="tooltip">'
+                '<p><strong>Parques Tecnológicos</strong> são complexos de desenvolvimento econômico e tecnológico formalmente ligados a '
+                'centros de excelência tecnológica, universidades e/ou centros de pesquisa, que visam fomentar economias baseadas no conhecimento '
+                'por meio da integração entre pesquisa científica e tecnológica, empresas e organizações governamentais em um mesmo local físico.</p>'
+                '<p><strong>Infraestrutura e serviços:</strong> além de prover espaço para negócios baseados em conhecimento e apoiar as inter-relações '
+                'entre esses grupos, podem abrigar centros de pesquisa, desenvolvimento tecnológico, inovação, incubação, treinamento e prospecção, '
+                'bem como servir de infraestrutura para feiras, exposições e desenvolvimento mercadológico.</p>'
+                '</div>'
+                '</span>'
+            ),
         },
         {
             "valor": incubadoras,
@@ -1464,7 +1476,16 @@ if painel_selecionado == "Visão Geral":
             "valor": centros,
             "label": "Centros de Inovação",
             "icone": obter_icone_formato_spai("centro_inovacao", cor="#005f73", tamanho=22),
-            "tooltip_html": "",
+            "tooltip_html": (
+                '<span class="help-tip-wrap">'
+                '<span class="help-tip-btn" tabindex="0" aria-label="Explicação sobre Centros de Inovação Tecnológica">?</span>'
+                '<div class="help-tip-popover help-tip-popover-right" role="tooltip">'
+                '<p><strong>Centro de Inovação Tecnológica</strong> é o empreendimento que concentra, integra e oferece um conjunto de mecanismos e serviços '
+                'de suporte ao processo de inovação tecnológica das empresas, constituindo-se, também, em espaço de interação empresarial-acadêmica '
+                'para o desenvolvimento de setores econômicos.</p>'
+                '</div>'
+                '</span>'
+            ),
         },
     ]
 
