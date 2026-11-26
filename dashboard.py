@@ -287,28 +287,26 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Lista Interativa Compacta de Ambientes com Badge de Ação (➔) à Direita */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 6px 8px !important;
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stVerticalBlock"] {
+    /* Lista Interativa Compacta de Ambientes com Badge de Ação Real */
+    .spai-env-list-container > div[data-testid="stVerticalBlock"] {
         gap: 4px !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stElementContainer"] {
+    .spai-env-list-container div[data-testid="stElementContainer"] {
         margin: 0 !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button {
+    button.spai-env-item-btn {
         width: 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
+        gap: 10px !important;
         text-align: left !important;
         background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-left: 3px solid #94d2bd !important;
+        border: 1px solid #cbd5e1 !important;
+        border-left: 4px solid #0a9396 !important;
         border-radius: 8px !important;
         padding: 7px 10px 7px 12px !important;
-        min-height: 36px !important;
+        min-height: 38px !important;
         height: auto !important;
         line-height: 1.25 !important;
         font-size: 12.5px !important;
@@ -317,46 +315,44 @@ st.markdown("""
         cursor: pointer !important;
         transition: all 0.14s ease !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button > div {
-        width: 100% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 10px !important;
+    button.spai-env-item-btn > div {
+        flex: 1 1 auto !important;
+        text-align: left !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button p {
+    button.spai-env-item-btn p {
         font-size: 12.5px !important;
         line-height: 1.25 !important;
         margin: 0 !important;
         text-align: left !important;
-        flex: 1 1 auto !important;
+        color: inherit !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button::after {
-        content: "➔" !important;
-        flex-shrink: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 24px !important;
-        height: 24px !important;
-        border-radius: 999px !important;
-        background-color: #e6f4f1 !important;
-        color: #005f73 !important;
-        font-size: 13px !important;
-        font-weight: 800 !important;
-        transition: all 0.15s ease !important;
+    .spai-env-badge {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background-color: #e6f4f1;
+        color: #005f73;
+        border: 1px solid #94d2bd;
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+        white-space: nowrap;
+        transition: all 0.15s ease;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button:hover {
+    button.spai-env-item-btn:hover {
         background-color: #f0fdfa !important;
-        border-color: #0a9396 !important;
-        border-left-color: #005f73 !important;
+        border-color: #005f73 !important;
         color: #005f73 !important;
-        box-shadow: 0 2px 6px rgba(0, 95, 115, 0.12) !important;
+        box-shadow: 0 2px 8px rgba(0, 95, 115, 0.14) !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button:hover::after {
-        background-color: #005f73 !important;
-        color: #ffffff !important;
-        transform: translateX(2px) !important;
+    button.spai-env-item-btn:hover .spai-env-badge {
+        background-color: #005f73;
+        color: #ffffff;
+        border-color: #005f73;
+        transform: translateX(2px);
     }
 
     /* Painel Lateral Sobreposto (Drawer) */
@@ -1415,7 +1411,7 @@ if painel_selecionado == "Visão Geral":
             unsafe_allow_html=True,
         )
 
-        # Lista rolável compacta com badge de seta (➔) estilizado via CSS à direita
+        # Lista rolável compacta com badge real injetado dentro de cada botão
         with st.container(height=435, border=True):
             if df_filt.empty:
                 st.info("Nenhum ambiente corresponde à busca atual.")
@@ -1458,68 +1454,92 @@ if painel_selecionado == "Visão Geral":
             renderizar_drawer_detalhes(st.session_state["ambiente_drawer_selecionado"])
 
     # ----------------------------------------------------
-    # 3. SINCRONIA HOVER LISTA -> DESTAQUE NO PINO DO MAPA
+    # 3. BADGE DE AÇÃO NA LISTA + HOVER SINCRONIZADO COM O MAPA
     # ----------------------------------------------------
-    if not df_m.empty:
-        nomes_mapa_json = json.dumps(df_m[col_nome_orig].astype(str).str.strip().tolist(), ensure_ascii=False)
-        nome_selecionado_json = json.dumps(drawer_ativo["nome"] if drawer_ativo else "", ensure_ascii=False)
-        components.html(
-            f"""
-            <script>
-            (function() {{
-                const doc = window.parent.document;
-                const nomesMapa = {nomes_mapa_json};
-                const nomeAtivo = {nome_selecionado_json};
+    nomes_lista_json = json.dumps(df_filt[col_nome_orig].astype(str).str.strip().tolist(), ensure_ascii=False)
+    nomes_mapa_json = json.dumps(
+        df_m[col_nome_orig].astype(str).str.strip().tolist() if not df_m.empty else [],
+        ensure_ascii=False,
+    )
+    nome_selecionado_json = json.dumps(drawer_ativo["nome"] if drawer_ativo else "", ensure_ascii=False)
+    components.html(
+        f"""
+        <script>
+        (function() {{
+            const doc = window.parent.document;
+            const nomesListaSet = new Set({nomes_lista_json});
+            const nomesMapa = {nomes_mapa_json};
+            const nomeAtivo = {nome_selecionado_json};
 
-                function destacarPinoMapa(nomeHover) {{
-                    const plots = doc.querySelectorAll('.js-plotly-plot');
-                    plots.forEach(gd => {{
-                        if (!gd || !gd.data || !gd.data.length) return;
-                        const trace = gd.data[0];
-                        if (!trace || !trace.hovertext) return;
+            function destacarPinoMapa(nomeHover) {{
+                if (!nomesMapa.length) return;
+                const plots = doc.querySelectorAll('.js-plotly-plot');
+                plots.forEach(gd => {{
+                    if (!gd || !gd.data || !gd.data.length) return;
+                    const trace = gd.data[0];
+                    if (!trace || !trace.hovertext) return;
 
-                        const cores = nomesMapa.map(n => {{
-                            if (nomeHover && n === nomeHover) return '#e85d04';
-                            if (nomeAtivo && n === nomeAtivo) return '#e85d04';
-                            return '#005f73';
-                        }});
-                        const tamanhos = nomesMapa.map(n => {{
-                            if (nomeHover && n === nomeHover) return 21;
-                            if (nomeAtivo && n === nomeAtivo) return 19;
-                            return 13;
-                        }});
-
-                        if (window.parent.Plotly) {{
-                            window.parent.Plotly.restyle(gd, {{
-                                'marker.color': [cores],
-                                'marker.size': [tamanhos]
-                            }}, [0]);
-                        }}
+                    const cores = nomesMapa.map(n => {{
+                        if (nomeHover && n === nomeHover) return '#e85d04';
+                        if (nomeAtivo && n === nomeAtivo) return '#e85d04';
+                        return '#005f73';
                     }});
-                }}
+                    const tamanhos = nomesMapa.map(n => {{
+                        if (nomeHover && n === nomeHover) return 21;
+                        if (nomeAtivo && n === nomeAtivo) return 19;
+                        return 13;
+                    }});
 
-                function vincularHoverLista() {{
-                    const botoes = doc.querySelectorAll('div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stButton"] button');
-                    botoes.forEach(btn => {{
-                        if (btn.dataset.hoverBound === '1') return;
+                    if (window.parent.Plotly) {{
+                        window.parent.Plotly.restyle(gd, {{
+                            'marker.color': [cores],
+                            'marker.size': [tamanhos]
+                        }}, [0]);
+                    }}
+                }});
+            }}
+
+            function aprimorarBotoesLista() {{
+                const botoes = doc.querySelectorAll('div[data-testid="stButton"] button');
+                botoes.forEach(btn => {{
+                    const pEl = btn.querySelector('p');
+                    if (!pEl) return;
+                    const textoCompleto = (pEl.innerText || pEl.textContent || '').trim();
+                    const nomeEnv = textoCompleto.split('  ·  ')[0].trim();
+
+                    if (!nomesListaSet.has(nomeEnv)) return;
+
+                    btn.classList.add('spai-env-item-btn');
+
+                    const blocoPai = btn.closest('div[data-testid="stVerticalBlock"]');
+                    if (blocoPai && blocoPai.parentElement) {{
+                        blocoPai.parentElement.classList.add('spai-env-list-container');
+                    }}
+
+                    if (!btn.querySelector('.spai-env-badge')) {{
+                        const badge = doc.createElement('span');
+                        badge.className = 'spai-env-badge';
+                        badge.textContent = 'Ver ficha ➔';
+                        btn.appendChild(badge);
+                    }}
+
+                    if (btn.dataset.hoverBound !== '1') {{
                         btn.dataset.hoverBound = '1';
-                        const pEl = btn.querySelector('p');
-                        const textoCompleto = ((pEl ? pEl.innerText : btn.innerText) || '').trim();
-                        const nomeEnv = textoCompleto.split('  ·  ')[0].trim();
                         btn.addEventListener('mouseenter', () => destacarPinoMapa(nomeEnv));
                         btn.addEventListener('mouseleave', () => destacarPinoMapa(null));
-                    }});
-                }}
+                    }}
+                }});
+            }}
 
-                vincularHoverLista();
-                const obs = new MutationObserver(vincularHoverLista);
-                obs.observe(doc.body, {{ childList: true, subtree: true }});
-            }})();
-            </script>
-            """,
-            height=0,
-            width=0,
-        )
+            aprimorarBotoesLista();
+            const obs = new MutationObserver(aprimorarBotoesLista);
+            obs.observe(doc.body, {{ childList: true, subtree: true }});
+        }})();
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
 
 # ====================================================
 # PAINEL 2: VERTICAIS TECNOLÓGICAS
